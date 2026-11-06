@@ -12,14 +12,15 @@ This is a research log, not a product. Every number here was measured on real ha
 
 ## The idea
 
-A mixture-of-experts (MoE) model has, say, 128 experts per layer, but each token only uses 4 or 8 of them. People don't use a model for everything; most of what one person does is a handful of task types (coding, web search, tool use, docs). So:
+Mixture-of-experts models are where open AI is going ("Dense is basically over", Thom Wolf, as Hugging Face released its MoE training handbook). They are huge, but sparse: gpt-oss-120b wakes 4 of its 128 experts per token, and one person's work keeps waking the same few.
 
-1. **Profile** your own sessions and log which experts light up for each task type: profile 1 (coding), profile 2 (chat), profile 3 (...).
-2. **Classify** a new session (from the prompt alone: 99–100% accurate in our simulations) and load *that* profile's experts into the fastest memory. A few minutes of setup, then the session runs hot.
-3. **Tier the rest:** hot experts in GPU memory, warm ones in RAM, cold ones on SSD. Go to SSD only when you must.
-4. **When an expert is missing, use a nearby one that is loaded.** A small, tunable nudge to the router (λ) is enough. It's cheaper than waiting, and better than skipping the expert.
+Everyone already offloads experts to RAM and SSD and caches them reactively. The idea here is different: **treat your expert set as something learned.**
 
-You don't need the whole model in fast memory. You need the slice your session uses.
+1. **Profile** your own sessions and record which experts each kind of task uses (coding, search, docs, tools).
+2. **Classify** a new session from its first prompt (99–100% in our simulations) and **predict** its experts.
+3. **Place** them before the first token: the core on the GPU, the neighbours in RAM, the rest on SSD. Picked, not cached.
+4. **Re-profile** when your work shifts (this week Python, the weekend Mojo). Same model, new expert set. No quantization, no retraining.
+5. When a rare token wants an expert that isn't loaded, **borrow a loaded neighbour** (a small router nudge, λ) instead of waiting on the SSD.
 
 ## What we found: Pin, Steer, Batch
 
