@@ -1,6 +1,8 @@
-# Expert Dispatch
+# omxpert dispatch
 
-**Cover page: https://abhisheksreesaila.github.io/expert-dispatch/**
+> **An omxlabs research project.** Status: research, not a product.
+
+**Cover page: https://abhisheksreesaila.github.io/omxpert-dispatch/**
 
 **Run a mixture-of-experts model far bigger than your memory by loading only the experts *your* work uses.**
 
@@ -96,7 +98,7 @@ On Qwen3.6-35B-A3B (256 experts per layer), a profile built from your own coding
 | [`scripts/`](scripts/) | Profiling, simulators, benchmarks (`mac_*.sh` are the Mac runs) |
 | [`mojo/cachesim.mojo`](mojo/cachesim.mojo) | Cache replay simulator |
 | [`results/`](results/) | Metrics, plots, profiles (`pin_*.bin`), Mac logs |
-| [`docs/index.html`](docs/index.html) | The cover page: https://abhisheksreesaila.github.io/expert-dispatch/ |
+| [`docs/index.html`](docs/index.html) | The cover page: https://abhisheksreesaila.github.io/omxpert-dispatch/ |
 | [`docs/vision.md`](docs/vision.md) | The original idea |
 | [`docs/PRIOR_ART.md`](docs/PRIOR_ART.md) | Related work (ProMoE, MoE-Infinity, Cache-Prior, ReMoE, DoMoE, llama.cpp `--moe-cache-mib`, ...) |
 | [`docs/logs/`](docs/logs/) | Night-by-night lab notes, the Mac log, and the idea log (`IDEAS.md`, 40+ ideas) |
