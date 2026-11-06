@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 W = Path.home() / "expert-dispatch"
-MID = "allenai/OLMoE-1B-7B-0125-Instruct"
+MID = __import__("os").environ.get("MODEL", "allenai/OLMoE-1B-7B-0125-Instruct"); MNAME = MID.split("/")[-1]
 S, ntrain, steps_max = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
 SEQ, NEVAL = 512, 40_000
 torch.manual_seed(0)
@@ -27,8 +27,21 @@ model = AutoModelForCausalLM.from_pretrained(MID, dtype=torch.bfloat16, device_m
 for p in model.parameters():
     p.requires_grad_(False)
 routers = [m for n, m in model.named_modules() if type(m).__name__.endswith("TopKRouter")]
+def moe_weights(m, logits, idx, keep=None):
+    """Mixing weights for the chosen experts, the way this model computes them. keep: bool [E] of loaded experts;
+    a chosen expert that is not loaded gets weight 0 (it only happens when fewer experts are loaded than top-k)."""
+    if type(m).__name__.startswith("GraniteMoe"):          # softmax over the chosen logits only
+        z = logits.float().gather(-1, idx)
+        if keep is not None:
+            z = z.masked_fill(~keep[idx], float("-inf"))
+        return F.softmax(z, -1)
+    top = F.softmax(logits.float(), -1).gather(-1, idx)    # OLMoE: full-softmax probabilities
+    if getattr(m, "norm_topk_prob", False):
+        top = top / top.sum(-1, keepdim=True)
+    return top * keep[idx] if keep is not None else top
+
 L = len(routers)
-E = model.config.num_experts
+E = getattr(model.config, "num_experts", None) or model.config.num_local_experts
 state = {"mode": "full", "mask": None, "g": None, "count": None}
 
 
@@ -39,7 +52,7 @@ def router_hook(l):
         if mode == "count":   # gather routing statistics on the unrestricted model
             probs = F.softmax(logits.float(), -1)
             state["count"][0][l] += torch.bincount(idx.reshape(-1), minlength=E).float()
-            state["count"][1][l].index_add_(0, idx.reshape(-1), probs.gather(-1, idx).reshape(-1))
+            state["count"][1][l].index_add_(0, idx.reshape(-1), moe_weights(m, logits, idx).reshape(-1))
             return out
         if mode == "full":
             return out
@@ -52,9 +65,12 @@ def router_hook(l):
             z = logits.float() + F.logsigmoid(state["g"][l])
         probs = F.softmax(logits.float(), -1) if mode == "mask" else F.softmax(z, -1)   # maskn and soft: renormalised
         idx = torch.topk(z, m.top_k, dim=-1).indices
-        top = probs.gather(-1, idx)
-        if getattr(m, "norm_topk_prob", False):
-            top = top / top.sum(-1, keepdim=True)
+        if mode == "mask":
+            top = moe_weights(m, logits, idx, state["mask"][l])
+        else:
+            top = probs.gather(-1, idx)
+            if getattr(m, "norm_topk_prob", False):
+                top = top / top.sum(-1, keepdim=True)
         return logits, top.to(scores.dtype), idx
     return fwd
 
@@ -147,6 +163,6 @@ for k, ids in ev.items():
         res[f"{k}_{name}"] = ppl(ids, "mask", m)
 
 print(json.dumps(res), flush=True)
-out = W / "results/OLMoE-1B-7B-0125-Instruct" / f"residency_S{S}_t{ntrain}.json"
+out = W / "results" / MNAME / f"residency_S{S}_t{ntrain}.json"
 json.dump(res, open(out, "w"), indent=1)
 torch.save({"g": g.detach().cpu(), "counts": counts.cpu(), "gate": gatew.cpu(), "taylor": imp.cpu()}, out.with_suffix(".pt"))

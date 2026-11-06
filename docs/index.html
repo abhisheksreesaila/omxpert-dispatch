@@ -345,6 +345,12 @@ footer a { color: var(--acc); }
           <div><b>66.2%</b><span>8 of 64 + adapter</span></div>
           <div><b>62.3%</b><span>4 of 64 + adapter</span></div>
         </div>
+        <span class="k" style="margin-top:22px">Same recipe, second model · Granite 3B (40 experts) · full model 68.7%</span>
+        <div class="sizes">
+          <div><b>63.3%</b><span>16 of 40 · counted 42.7%</span></div>
+          <div><b>57.6%</b><span>8 of 40 · counted 33.7%</span></div>
+          <div><b>45.0%</b><span>4 of 40 · counted 1.5%</span></div>
+        </div>
       </div>
       <div class="steps3">
         <div class="card rv"><span class="n">1 · COUNT</span><h3>Start from what fires</h3><p>The profile's most-used experts. Fine at 25% of the model, falls off below that: 48% right at 8 of 64, against 69% for the full model.</p></div>
@@ -352,7 +358,7 @@ footer a { color: var(--acc); }
         <div class="card rv"><span class="n">3 · ADAPT</span><h3>Train a tiny correction</h3><p>A 2M-parameter adapter per profile, trained 5 minutes to imitate the full model. The set and its adapter ship together as one bundle.</p></div>
       </div>
     </div>
-    <p class="cap rv">OLMoE-1B-7B (64 experts, 8 per token) on held-out coding text, Linux GPU. The bundle agrees with the full model's top guess 71–82% of the time: close, not identical. Not yet tried on the 120B, which needs a bigger training machine.</p>
+    <p class="cap rv">OLMoE-1B-7B (64 experts, 8 per token) and IBM Granite 3.1 3B-A800M (40 experts, 8 per token) on held-out coding text, Linux GPU. OLMoE bundles agree with the full model's top guess 69–82% of the time: close, not identical. Not yet tried on the 120B, which needs a bigger training machine.</p>
   </section>
 
   <section id="evidence">

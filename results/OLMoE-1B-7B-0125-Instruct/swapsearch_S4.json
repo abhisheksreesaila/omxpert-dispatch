@@ -2,15 +2,15 @@
  "S": 4,
  "rounds": 10,
  "cand": 6,
- "swaps_kept": 66,
- "search_s": 953.4744300842285,
+ "swaps_kept": 84,
+ "search_s": 914.3399295806885,
  "slice_kl_start": null,
- "slice_kl_end": 4.025264143943787,
+ "slice_kl_end": 4.900319039821625,
  "changed_share": 0.421875,
  "coding_full": 5.868044019980214,
- "coding_gate": 2421.9545531381314,
- "coding_search": 130.71484459965671,
+ "coding_gate": 4526.604360108739,
+ "coding_search": 440.1157757781572,
  "design_chat_full": 36.24852888514514,
- "design_chat_gate": 9450.564762507716,
- "design_chat_search": 2239.5992368838924
+ "design_chat_gate": 13474.08700829685,
+ "design_chat_search": 4610.607400954478
 }

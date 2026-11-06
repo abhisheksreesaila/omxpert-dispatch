@@ -12,14 +12,27 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 W = Path.home() / "expert-dispatch"
-MID = "allenai/OLMoE-1B-7B-0125-Instruct"
+MID = __import__("os").environ.get("MODEL", "allenai/OLMoE-1B-7B-0125-Instruct"); MNAME = MID.split("/")[-1]
 S, rounds, cand = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
 NSLICE, NEVAL = 4096, 40_000
 
 tok = AutoTokenizer.from_pretrained(MID)
 model = AutoModelForCausalLM.from_pretrained(MID, dtype=torch.bfloat16, device_map="cuda").eval()
 routers = [m for n, m in model.named_modules() if type(m).__name__.endswith("TopKRouter")]
-L, E = len(routers), model.config.num_experts
+def moe_weights(m, logits, idx, keep=None):
+    """Mixing weights for the chosen experts, the way this model computes them. keep: bool [E] of loaded experts;
+    a chosen expert that is not loaded gets weight 0 (it only happens when fewer experts are loaded than top-k)."""
+    if type(m).__name__.startswith("GraniteMoe"):          # softmax over the chosen logits only
+        z = logits.float().gather(-1, idx)
+        if keep is not None:
+            z = z.masked_fill(~keep[idx], float("-inf"))
+        return F.softmax(z, -1)
+    top = F.softmax(logits.float(), -1).gather(-1, idx)    # OLMoE: full-softmax probabilities
+    if getattr(m, "norm_topk_prob", False):
+        top = top / top.sum(-1, keepdim=True)
+    return top * keep[idx] if keep is not None else top
+
+L, E = len(routers), getattr(model.config, "num_experts", None) or model.config.num_local_experts
 state = {"mask": None}
 
 
@@ -28,11 +41,8 @@ def hook(l):
         if state["mask"] is None:
             return out
         logits, scores, idx = out
-        probs = F.softmax(logits.float(), -1)
         idx = torch.topk(logits.float() + torch.where(state["mask"][l], 0.0, -1e9), m.top_k, dim=-1).indices
-        top = probs.gather(-1, idx)
-        if getattr(m, "norm_topk_prob", False):
-            top = top / top.sum(-1, keepdim=True)
+        top = moe_weights(m, logits, idx, state["mask"][l])
         return logits, top.to(scores.dtype), idx
     return fwd
 
@@ -48,7 +58,7 @@ if os.environ.get("ADAPTER"):
         def forward(self, h):
             h = h.float(); return self.up(self.down(h * torch.rsqrt(h.pow(2).mean(-1, keepdim=True) + 1e-6)))
     ads = nn.ModuleList([Adapter() for _ in range(L)]).cuda(); ads.load_state_dict(torch.load(os.environ["ADAPTER"]))
-    blocks = [m for n, m in model.named_modules() if type(m).__name__.endswith("SparseMoeBlock")]
+    blocks = [m for n, m in model.named_modules() if (type(m).__name__.endswith("SparseMoeBlock") or type(m).__name__ == "GraniteMoeMoE")]
     def bh(l):
         def f(m, a, out):
             if state["mask"] is None:
@@ -81,7 +91,7 @@ def ppl(ids, mask):
     return float(np.exp(nll / n))
 
 
-gate = torch.load(W / f"results/OLMoE-1B-7B-0125-Instruct/residency_S{S}_t120000.pt")["gate"].cuda()
+gate = torch.load(W / "results" / MNAME / f"residency_S{S}_t120000.pt")["gate"].cuda()
 order = torch.argsort(gate, dim=1, descending=True)
 mask = torch.zeros(L, E, dtype=torch.bool, device="cuda"); mask.scatter_(1, order[:, :S], True)
 if os.environ.get("START"):
@@ -109,5 +119,5 @@ res = {"S": S, "rounds": rounds, "cand": cand, "swaps_kept": kept, "search_s": t
 for k, ids in ev.items():
     res[f"{k}_full"] = ppl(ids, None); res[f"{k}_gate"] = ppl(ids, start); res[f"{k}_search"] = ppl(ids, mask)
 print(json.dumps(res), flush=True)
-out = W / "results/OLMoE-1B-7B-0125-Instruct" / f"swapsearch_S{S}{os.environ.get('TAG', '')}.json"
+out = W / "results" / MNAME / f"swapsearch_S{S}{os.environ.get('TAG', '')}.json"
 json.dump(res, open(out, "w"), indent=1); torch.save(mask.cpu(), out.with_suffix(".pt"))

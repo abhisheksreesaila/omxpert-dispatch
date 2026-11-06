@@ -11,13 +11,26 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-W = Path.home() / "expert-dispatch"; R = W / "results/OLMoE-1B-7B-0125-Instruct"
-MID = "allenai/OLMoE-1B-7B-0125-Instruct"; NEVAL = 40_000
+W = Path.home() / "expert-dispatch"
+MID = __import__("os").environ.get("MODEL", "allenai/OLMoE-1B-7B-0125-Instruct"); MNAME = MID.split("/")[-1]; NEVAL = 40_000
 tok = AutoTokenizer.from_pretrained(MID)
 model = AutoModelForCausalLM.from_pretrained(MID, dtype=torch.bfloat16, device_map="cuda").eval()
 routers = [m for n, m in model.named_modules() if type(m).__name__.endswith("TopKRouter")]
-blocks = [m for n, m in model.named_modules() if type(m).__name__.endswith("SparseMoeBlock")]
-L, E, H = len(routers), model.config.num_experts, model.config.hidden_size
+def moe_weights(m, logits, idx, keep=None):
+    """Mixing weights for the chosen experts, the way this model computes them. keep: bool [E] of loaded experts;
+    a chosen expert that is not loaded gets weight 0 (it only happens when fewer experts are loaded than top-k)."""
+    if type(m).__name__.startswith("GraniteMoe"):          # softmax over the chosen logits only
+        z = logits.float().gather(-1, idx)
+        if keep is not None:
+            z = z.masked_fill(~keep[idx], float("-inf"))
+        return F.softmax(z, -1)
+    top = F.softmax(logits.float(), -1).gather(-1, idx)    # OLMoE: full-softmax probabilities
+    if getattr(m, "norm_topk_prob", False):
+        top = top / top.sum(-1, keepdim=True)
+    return top * keep[idx] if keep is not None else top
+
+blocks = [m for n, m in model.named_modules() if (type(m).__name__.endswith("SparseMoeBlock") or type(m).__name__ == "GraniteMoeMoE")]
+L, E, H = len(routers), getattr(model.config, "num_experts", None) or model.config.num_local_experts, model.config.hidden_size
 state = {"mask": None, "ad": None}
 
 
@@ -37,7 +50,7 @@ def rhook(l):
         logits, scores, idx = out
         probs = F.softmax(logits.float(), -1)
         idx = torch.topk(logits.float() + torch.where(state["mask"][l], 0.0, -1e9), m.top_k, dim=-1).indices
-        return logits, probs.gather(-1, idx).to(scores.dtype), idx
+        return logits, moe_weights(m, logits, idx, state["mask"][l]).to(scores.dtype), idx
     return f
 
 
@@ -81,13 +94,14 @@ def adapter(path, rank=32):
     ad = nn.ModuleList([Adapter(rank) for _ in range(L)]).cuda(); ad.load_state_dict(torch.load(path)); return ad
 
 
-counts = np.load(W / "counts/OLMoE-1B-7B-0125-Instruct_coding.npy")
+R = W / "results" / MNAME
+counts = np.load(W / "counts/OLMoE-1B-7B-0125-Instruct_coding.npy") if "OLMoE" in MID else torch.load(R / "residency_S8_t120000.pt")["counts"].numpy()
 configs = [("full model", None, None)]
 for S in (16, 8, 4):
-    configs.append((f"{S}/64 counted", mask_from(counts, S), None))
-    configs.append((f"{S}/64 learned set", mask_from(torch.load(R / f"swapsearch_S{S}.pt"), S), None))
+    configs.append((f"{S}/{E} counted", mask_from(counts, S), None))
+    configs.append((f"{S}/{E} learned set", mask_from(torch.load(R / f"swapsearch_S{S}.pt"), S), None))
     ad = {16: "adapter_coding_search_S16_linf_r32_t240000.pt", 8: "adapter_coding_search_S8_linf_r32_t480000.pt", 4: "adapter_coding_search_S4_linf_r32_t480000.pt"}[S]
-    configs.append((f"{S}/64 learned set + adapter", mask_from(torch.load(R / f"swapsearch_S{S}.pt"), S), adapter(R / ad)))
+    configs.append((f"{S}/{E} learned set + adapter", mask_from(torch.load(R / f"swapsearch_S{S}.pt"), S), adapter(R / ad)))
 rows = []
 for name, m, ad in configs:
     state.update(mask=m, ad=ad)

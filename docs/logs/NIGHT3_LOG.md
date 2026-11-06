@@ -73,3 +73,5 @@ OLMoE picks 8 experts per token. With only 4 resident, the hard mask's top-8 sti
 | 32 | 812 ms, 1.47×, +5.8% | 887 ms, **1.35×, +0.5%** |
 - Right vs wrong profile (coding work, 16/layer, λ=1): coding profile 474 ms, +8.7%; **chat profile 647 ms, +34.5%**. The wrong profile is slower and four times as costly.
 - Profiles from fewer tokens look more concentrated (top-16 coverage: 1k tokens 65.9%, 5k 57.7%, 25k 54.0%): small samples overfit.
+- Granite bundles (hard mask, rank 32): S=16 learned set 19.98 → + adapter **7.02** (top-1 63.3%, full 68.7%, counted 42.7%); S=8 38.2 → **9.80** (57.6%, counted 33.7%); S=4 380 → **28.5** (45.0%, counted 1.5%). Recipe holds on a second family; Granite is less forgiving.
+- Mac: chat profile at λ=0.5 (16/layer): 945 ms, ppl 3.873 (+2.3%) vs coding profile 889 ms, +2.7%. At gentle steering the wrong profile costs no extra quality, only speed; the profile matters most at firm steering.

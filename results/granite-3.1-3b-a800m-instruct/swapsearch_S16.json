@@ -1,0 +1,16 @@
+{
+ "S": 16,
+ "rounds": 3,
+ "cand": 4,
+ "swaps_kept": 98,
+ "search_s": 402.7611107826233,
+ "slice_kl_start": null,
+ "slice_kl_end": 1.0146901160478592,
+ "changed_share": 0.1171875,
+ "coding_full": 4.90922552130088,
+ "coding_gate": 26.035336402583788,
+ "coding_search": 19.97692967981514,
+ "design_chat_full": 25.13108354924511,
+ "design_chat_gate": 155.37303265209,
+ "design_chat_search": 123.57133653176493
+}

@@ -17,29 +17,44 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 W = Path.home() / "expert-dispatch"
-MID = "allenai/OLMoE-1B-7B-0125-Instruct"
+MID = __import__("os").environ.get("MODEL", "allenai/OLMoE-1B-7B-0125-Instruct"); MNAME = MID.split("/")[-1]
 S, lam, rank, ntrain = int(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
 steps_max = int(sys.argv[5]) if len(sys.argv) > 5 else 10**9
 SEQ, NEVAL = 512, 40_000
 torch.manual_seed(0)
 
 PROF = __import__("os").environ.get("PROFILE", "coding")
-prof = np.load(W / f"counts/OLMoE-1B-7B-0125-Instruct_{PROF}.npy")  # [L, E] from that tag's train split
+prof = np.load(W / f"counts/OLMoE-1B-7B-0125-Instruct_{PROF}.npy") if "OLMoE" in MID else None  # [L, E]; other models: counts from residency_olmoe.py
+RES = __import__("os").environ.get("RES", "counts")   # counts: the profile npy; gate: router-weighted frequency saved by residency_olmoe.py
+if prof is None and RES == "counts":
+    prof = torch.load(W / "results" / MNAME / f"residency_S8_t120000.pt")["counts"].numpy()
+if RES == "search":   # the mask learned by swapsearch_olmoe.py
+    prof = torch.load(W / "results" / MNAME / f"swapsearch_S{S}.pt").float().numpy()
+elif RES != "counts":
+    prof = torch.load(W / "results" / MNAME / f"residency_S{S}_t120000.pt")[RES].numpy()
 L, E = prof.shape
 tok = AutoTokenizer.from_pretrained(MID)
 model = AutoModelForCausalLM.from_pretrained(MID, dtype=torch.bfloat16, device_map="cuda").eval()
 for p in model.parameters():
     p.requires_grad_(False)
 routers = [m for n, m in model.named_modules() if type(m).__name__.endswith("TopKRouter")]
-blocks = [m for n, m in model.named_modules() if type(m).__name__.endswith("SparseMoeBlock")]
+def moe_weights(m, logits, idx, keep=None):
+    """Mixing weights for the chosen experts, the way this model computes them. keep: bool [E] of loaded experts;
+    a chosen expert that is not loaded gets weight 0 (it only happens when fewer experts are loaded than top-k)."""
+    if type(m).__name__.startswith("GraniteMoe"):          # softmax over the chosen logits only
+        z = logits.float().gather(-1, idx)
+        if keep is not None:
+            z = z.masked_fill(~keep[idx], float("-inf"))
+        return F.softmax(z, -1)
+    top = F.softmax(logits.float(), -1).gather(-1, idx)    # OLMoE: full-softmax probabilities
+    if getattr(m, "norm_topk_prob", False):
+        top = top / top.sum(-1, keepdim=True)
+    return top * keep[idx] if keep is not None else top
+
+blocks = [m for n, m in model.named_modules() if (type(m).__name__.endswith("SparseMoeBlock") or type(m).__name__ == "GraniteMoeMoE")]
 assert len(routers) == L and len(blocks) == L, (len(routers), len(blocks))
 H = model.config.hidden_size
 
-RES = __import__("os").environ.get("RES", "counts")   # counts: the profile npy; gate: router-weighted frequency saved by residency_olmoe.py
-if RES == "search":   # the mask learned by swapsearch_olmoe.py
-    prof = torch.load(W / f"results/OLMoE-1B-7B-0125-Instruct/swapsearch_S{S}.pt").float().numpy()
-elif RES != "counts":
-    prof = torch.load(W / f"results/OLMoE-1B-7B-0125-Instruct/residency_S{S}_t120000.pt")[RES].numpy()
 resident = torch.zeros(L, E, dtype=torch.bool, device="cuda")
 for l in range(L):
     resident[l, torch.as_tensor(np.argsort(-prof[l])[:S].copy())] = True
@@ -52,11 +67,8 @@ def router_hook(l):
         if not state["steer"]:
             return out
         logits, scores, idx = out
-        probs = F.softmax(logits.float(), dim=-1)
         idx = torch.topk(logits.float().detach() + bias[l], m.top_k, dim=-1).indices
-        top = probs.gather(-1, idx)
-        if getattr(m, "norm_topk_prob", False):
-            top = top / top.sum(-1, keepdim=True)
+        top = moe_weights(m, logits, idx, resident[l] if not math.isfinite(lam) else None)
         state["hit"] += int(resident[l][idx].sum()); state["tot"] += idx.numel()
         return logits, top.to(scores.dtype), idx
     return fwd
@@ -148,6 +160,6 @@ for k, ids in ev.items():
     gap = res[f"{k}_steer"] - res[f"{k}_full"]
     res[f"{k}_gap_closed_%"] = 100 * (res[f"{k}_steer"] - res[f"{k}_steer_adapter"]) / gap if gap > 0 else None
 print(json.dumps(res), flush=True)
-out = W / "results/OLMoE-1B-7B-0125-Instruct" / f"adapter_{PROF}_{RES}_S{S}_l{lam}_r{rank}_t{ntrain}.json"
+out = W / "results" / MNAME / f"adapter_{PROF}_{RES}_S{S}_l{lam}_r{rank}_t{ntrain}.json"
 json.dump(res, open(out, "w"), indent=1)
 torch.save(adapters.state_dict(), out.with_suffix(".pt"))

@@ -34,6 +34,7 @@ On a small MoE (OLMoE-1B-7B, 64 experts, 8 per token), routing strictly to a few
 | 8 of 64 | 47.8% | 57.9% | **66.2%** | 69.1% |
 | 4 of 64 | 8.0% | 19.6% | **62.3%** | 69.1% |
 
+- **Second model, same recipe** (IBM Granite 3.1 3B-A800M, 40 experts, 8 per token; full model 68.7%): 16 of 40: counted 42.7% → learned 51.7% → + adapter 63.3%. 8 of 40: 33.7% → 43.8% → 57.6%. 4 of 40: 1.5% → 20.3% → 45.0%.
 - **Learned set:** start from the most-used experts and try swaps layer by layer; keep a swap only if the model gets closer to the full model (KL) on training text. Gradient-learned gates and first-order importance both failed (logged).
 - **Adapter:** a low-rank residual per MoE block, trained by distillation against the full model. Set + adapter = one bundle per profile; the matching bundle wins on its own kind of work.
 - **Correction (03:15):** the first 4-of-64 numbers were wrong. The model picks 8 experts per token, so with only 4 loaded the strict mask still filled 4 slots with unloaded experts at full weight. 8 and 16 of 64 are unaffected. Re-measured with the unloaded slots dropped: 62.3% (the faulty run said 64.0%).
