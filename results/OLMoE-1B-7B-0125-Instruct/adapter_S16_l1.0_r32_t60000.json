@@ -1,0 +1,19 @@
+{
+ "S": 16,
+ "lambda": 1.0,
+ "rank": 32,
+ "train_tokens": 60000,
+ "adapter_params": 2097152,
+ "coding_full": 5.868044019980214,
+ "coding_steer": 6.056180482758515,
+ "coding_hit": 0.940087109375,
+ "design_chat_full": 36.24852888514514,
+ "design_chat_steer": 41.49807591937248,
+ "design_chat_hit": 0.820326953125,
+ "train_steps": 100,
+ "train_s": 18.68697166442871,
+ "coding_steer_adapter": 533.6451664055091,
+ "coding_gap_closed_%": -280428.885571458,
+ "design_chat_steer_adapter": 2924.8527083103018,
+ "design_chat_gap_closed_%": -54925.779569004626
+}

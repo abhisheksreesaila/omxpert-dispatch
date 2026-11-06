@@ -1,0 +1,17 @@
+{
+ "S": 8,
+ "train_tokens": 120000,
+ "steps": 0,
+ "train_s": 3.337860107421875e-06,
+ "overlap_learned_vs_counts": null,
+ "overlap_gate_vs_counts": 0.953125,
+ "overlap_taylor_vs_counts": 0.46875,
+ "coding_full": 5.868044019980214,
+ "coding_counts": 39.12554858164656,
+ "coding_gate": 31.599505349308572,
+ "coding_taylor": 154.38279477787728,
+ "design_chat_full": 36.24852888514514,
+ "design_chat_counts": 1922.0541984032402,
+ "design_chat_gate": 1826.8648069600606,
+ "design_chat_taylor": 981.872815189657
+}

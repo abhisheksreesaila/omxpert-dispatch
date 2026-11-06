@@ -1,0 +1,6 @@
+# Thu Nov  5 20:55:14 PST 2026 start
+# Thu Nov  5 21:17:39 PST 2026 start (real text; batched-bench used random tokens)
+steer1_np1 pass=7/8 [01111111] tokens=2364 wall_s=1736 tok_s_total=1.36
+steer1_np4 pass=8/8 [11111111] tokens=2337 wall_s=2330 tok_s_total=1.00
+steer0.5_np1 pass=8/8 [11111111] tokens=2541 wall_s=3076 tok_s_total=0.83
+# Thu Nov  5 23:19:10 PST 2026 done

@@ -1,0 +1,112 @@
+[
+ {
+  "config": "full model",
+  "coding_ppl": 5.868044019980214,
+  "coding_top1": 0.6908158158158159,
+  "coding_top5": 0.8383883883883884,
+  "coding_agree_full": 1.0,
+  "chat_ppl": 36.24852888514514,
+  "chat_top1": 0.41476476476476476,
+  "chat_top5": 0.5965965965965966,
+  "chat_agree_full": 1.0
+ },
+ {
+  "config": "16/64 counted",
+  "coding_ppl": 8.530742799840823,
+  "coding_top1": 0.6465715715715715,
+  "coding_top5": 0.7944194194194194,
+  "coding_agree_full": 0.7526025772094727,
+  "chat_ppl": 173.25606746035797,
+  "chat_top1": 0.30027527527527526,
+  "chat_top5": 0.4305805805805806,
+  "chat_agree_full": 0.38716214895248413
+ },
+ {
+  "config": "16/64 learned set",
+  "coding_ppl": 7.5279541665329255,
+  "coding_top1": 0.6572822822822822,
+  "coding_top5": 0.8082082082082082,
+  "coding_agree_full": 0.7639889717102051,
+  "chat_ppl": 115.76806872508331,
+  "chat_top1": 0.32665165165165166,
+  "chat_top5": 0.46646646646646645,
+  "chat_agree_full": 0.42267265915870667
+ },
+ {
+  "config": "16/64 learned set + adapter",
+  "coding_ppl": 5.673329171417756,
+  "coding_top1": 0.6803303303303303,
+  "coding_top5": 0.8319569569569569,
+  "coding_agree_full": 0.8191691637039185,
+  "chat_ppl": 51.79712976791976,
+  "chat_top1": 0.3748248248248248,
+  "chat_top5": 0.5373873873873873,
+  "chat_agree_full": 0.5286536812782288
+ },
+ {
+  "config": "8/64 counted",
+  "coding_ppl": 33.63309152457189,
+  "coding_top1": 0.4779029029029029,
+  "coding_top5": 0.6381881881881882,
+  "coding_agree_full": 0.5140390396118164,
+  "chat_ppl": 1540.0413226030641,
+  "chat_top1": 0.11929429429429429,
+  "chat_top5": 0.2122122122122122,
+  "chat_agree_full": 0.1388888955116272
+ },
+ {
+  "config": "8/64 learned set",
+  "coding_ppl": 14.753491157828705,
+  "coding_top1": 0.5791291291291292,
+  "coding_top5": 0.7328078078078079,
+  "coding_agree_full": 0.6344344615936279,
+  "chat_ppl": 520.4096619918719,
+  "chat_top1": 0.20825825825825825,
+  "chat_top5": 0.3220970970970971,
+  "chat_agree_full": 0.2520770728588104
+ },
+ {
+  "config": "8/64 learned set + adapter",
+  "coding_ppl": 6.2456259132411525,
+  "coding_top1": 0.6618868868868869,
+  "coding_top5": 0.8192692692692692,
+  "coding_agree_full": 0.7666916847229004,
+  "chat_ppl": 68.38015727557018,
+  "chat_top1": 0.3448698698698699,
+  "chat_top5": 0.5085835835835836,
+  "chat_agree_full": 0.45410409569740295
+ },
+ {
+  "config": "4/64 counted",
+  "coding_ppl": 2791.1886740969026,
+  "coding_top1": 0.09204204204204204,
+  "coding_top5": 0.20115115115115115,
+  "coding_agree_full": 0.09562061727046967,
+  "chat_ppl": 10021.762524965812,
+  "chat_top1": 0.028853853853853854,
+  "chat_top5": 0.09664664664664664,
+  "chat_agree_full": 0.028978979215025902
+ },
+ {
+  "config": "4/64 learned set",
+  "coding_ppl": 130.71484459965671,
+  "coding_top1": 0.3008008008008008,
+  "coding_top5": 0.47742742742742744,
+  "coding_agree_full": 0.3144644498825073,
+  "chat_ppl": 2239.5992368838924,
+  "chat_top1": 0.07925425425425425,
+  "chat_top5": 0.17572572572572573,
+  "chat_agree_full": 0.09301801770925522
+ },
+ {
+  "config": "4/64 learned set + adapter",
+  "coding_ppl": 7.224802639011292,
+  "coding_top1": 0.6401401401401401,
+  "coding_top5": 0.7974724724724724,
+  "coding_agree_full": 0.7132632732391357,
+  "chat_ppl": 76.07804696012163,
+  "chat_top1": 0.33506006006006006,
+  "chat_top5": 0.49654654654654656,
+  "chat_agree_full": 0.42960458993911743
+ }
+]

@@ -163,3 +163,12 @@ EAGLE3 head on gpt-oss-120b: best 0.75x of exact (draft 2, 69% accept); worse wi
 
 ### 43. Chat lane takes turns with the work lane (follows from 42)
 Two models cannot share 16 GB live. Design: chat lane (small model) runs while the owner talks; on hand-off it writes a batch file of independent work items, exits, and the 120B runs the batch steered + batched (7 tok/s total measured). Session-level routing: the chat model labels the task type, which picks the 120B's expert profile and λ; prefetch (idea 33) warms those experts before the batch starts. To test: switch-over cost (unload 20B, first-token latency of 120B on a warm vs cold cache).
+
+### 44. Profile bundle = expert set + steering-aware adapter (measured 2026-11-05, OLMoE, Linux)
+A rank-32 residual per MoE block (2.1M params, base frozen) trained ~3 min by distillation, with routing restricted to the profile's resident experts. Hard mask at 25% resident (zero SSD reads): coding ppl 8.53 -> 5.83 (full 5.87), KL to full halved. 12.5% resident: 33.6 -> 6.63. 19 s of training already gives 6.30. The matching bundle wins on its own work (coding 5.83 vs 6.91; chat 42.7 vs 54.3). Next: port to a fine-grained model (needs >24 GB in torch) and to llama.cpp (a residual hook after each MoE block); test whether it holds at 256 experts.
+
+### 45. Real jobs on 16 GB: one at a time beats batching (measured, Mac)
+gpt-oss-120b steered λ=1 via llama-server, 8 graded coding tasks: one at a time 7/8 pass, 1.36 tok/s; 4 at once 8/8 pass, 1.00 tok/s. Batching real, different jobs thrashes the page cache.
+
+### 46. Learnable residency (spec's learnable cache), first try (measured 2026-11-06, OLMoE)
+Pick the resident set by router-weighted frequency, not raw counts: 3.5% better at 25% resident, 19% better at 12.5%. Gradient-learned gates and Taylor importance both failed (soft-to-hard gap; re-routing ignored). Next: learn residency by swap search scored with real KL on a held-out slice (non-differentiable but honest), or co-train gates with the adapter using a straight-through hard mask plus an exploration term.

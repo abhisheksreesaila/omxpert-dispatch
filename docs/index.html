@@ -161,6 +161,23 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--acc); outline-o
 .promise span { font: 500 14px var(--sans); padding: 8px 14px; border-radius: 999px; background: var(--t1); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink2); }
 .promise span b { color: var(--acc); font-weight: 600; }
 
+
+/* learned bundles */
+.lb { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; margin-top: 44px; align-items: start; }
+.bars { display: grid; gap: 14px; margin-top: 8px; }
+.bar .t { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 6px; } .bar .t b { font: 700 15px var(--mono); }
+.bar .t small { color: var(--ink3); font-size: 13px; margin-left: 8px; }
+.bar .tr { height: 30px; border-radius: 9px; background: var(--t2); overflow: hidden; }
+.bar .fl { height: 100%; width: 0; border-radius: 9px; background: #3a3a3e; transition: width 1.4s var(--ease); }
+.bar.c .fl { background: var(--bad); } .bar.s .fl { background: color-mix(in srgb, var(--acc) 55%, #3a3a3e); } .bar.a .fl { background: var(--acc); } .bar.f .fl { background: var(--ram); }
+.steps3 { display: grid; gap: 12px; }
+.steps3 .card { padding: 20px; } .steps3 .n { font: 800 13px var(--mono); color: var(--acc); }
+.sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.sizes div { background: var(--t2); border-radius: 14px; padding: 14px; text-align: center; }
+.sizes b { display: block; font: 800 28px/1 var(--sans); letter-spacing: -.04em; color: var(--acc); }
+.sizes span { display: block; font: 12px var(--mono); color: var(--ink3); margin-top: 6px; }
+@media (max-width: 860px) { .lb { grid-template-columns: 1fr; } }
+
 /* evidence */
 .ev { margin-top: 44px; }
 .evr { display: grid; grid-template-columns: 1fr 150px 110px; gap: 18px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
@@ -208,7 +225,7 @@ footer a { color: var(--acc); }
 <header class="top">
   <a class="brand" href="#top" aria-label="omxpert dispatch, top"><span class="mark" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></span><span class="nm">omxpert dispatch</span><span class="rtag">Research</span></a>
   <nav class="pill" aria-label="Sections">
-    <a href="#why">Why MoE</a><a href="#idea">Predict, not cache</a><a href="#how">How</a><a href="#weekly">Every week</a><a href="#evidence">Evidence</a><a href="#next">Next</a>
+    <a href="#why">Why MoE</a><a href="#idea">Predict, not cache</a><a href="#how">How</a><a href="#weekly">Every week</a><a href="#learned">Learned</a><a href="#evidence">Evidence</a><a href="#next">Next</a>
   </nav>
   <a class="get cta sm" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
 </header>
@@ -310,6 +327,34 @@ footer a { color: var(--acc); }
     <div class="promise rv"><span><b>No</b> quantization</span><span><b>No</b> retraining</span><span><b>Full</b> model on disk for the rare hard question</span></div>
   </section>
 
+  <section id="learned">
+    <div class="eyebrow rv"><span class="rtag big">New · Nov 6</span> Learned, not counted</div>
+    <h2 class="rv">Keep 4 of 64 experts. <span class="acc">Still get 64% of your code right.</span></h2>
+    <p class="sub rv">Counting which experts fire is not enough at small sizes. Two learned steps fix it: <b>search</b> for the set that stays closest to the full model, then train a tiny <b>adapter</b> for that set. Routing never leaves the loaded experts.</p>
+    <div class="lb">
+      <div class="card rv" id="lbars">
+        <span class="k">Next token of your real code, guessed right · 4 of 64 experts per layer</span>
+        <div class="bars">
+          <div class="bar c"><div class="t"><span>Counted set<small>most-used experts</small></span><b>9.2%</b></div><div class="tr"><div class="fl" data-w="9.2"></div></div></div>
+          <div class="bar s"><div class="t"><span>Learned set<small>swap search, 16 min</small></span><b>30.1%</b></div><div class="tr"><div class="fl" data-w="30.1"></div></div></div>
+          <div class="bar a"><div class="t"><span>Learned set + adapter<small>2M parameters, 5 min</small></span><b>64.0%</b></div><div class="tr"><div class="fl" data-w="64.0"></div></div></div>
+          <div class="bar f"><div class="t"><span>Full model<small>all 64 experts</small></span><b>69.1%</b></div><div class="tr"><div class="fl" data-w="69.1"></div></div></div>
+        </div>
+        <div class="sizes">
+          <div><b>68.0%</b><span>16 of 64 + adapter</span></div>
+          <div><b>66.2%</b><span>8 of 64 + adapter</span></div>
+          <div><b>64.0%</b><span>4 of 64 + adapter</span></div>
+        </div>
+      </div>
+      <div class="steps3">
+        <div class="card rv"><span class="n">1 · COUNT</span><h3>Start from what fires</h3><p>The profile's most-used experts. Fine at 25% of the model, collapses below that: 9% right at 4 of 64.</p></div>
+        <div class="card rv"><span class="n">2 · SEARCH</span><h3>Learn the set</h3><p>Try swapping experts layer by layer; keep a swap only if the model gets closer to the full one on your text. 3× better at 4 of 64, and it carries over to chat.</p></div>
+        <div class="card rv"><span class="n">3 · ADAPT</span><h3>Train a tiny correction</h3><p>A 2M-parameter adapter per profile, trained 5 minutes to imitate the full model. The set and its adapter ship together as one bundle.</p></div>
+      </div>
+    </div>
+    <p class="cap rv">OLMoE-1B-7B (64 experts, 8 per token) on held-out coding text, Linux GPU. The bundle agrees with the full model's top guess 71–82% of the time: close, not identical. Not yet tried on the 120B, which needs a bigger training machine.</p>
+  </section>
+
   <section id="evidence">
     <div class="eyebrow rv">Does the evidence back it?</div>
     <h2 class="rv">Measured so far, <span class="two">wins and losses.</span></h2>
@@ -320,8 +365,12 @@ footer a { color: var(--acc); }
       <div class="evr"><div class="c">Placing predicted experts beats the default split<small>2×RTX 3090, exact output, vs llama.cpp's split by layer</small></div><div class="n">32% faster</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">120B on a 16 GB Mac, borrowing loaded neighbours<small>gpt-oss-120b, λ=1, +8.3% perplexity; λ=0.5: 1.46× for +2.0%</small></div><div class="n">1.04 → 2.96</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">Your experts drift<small>Share of the coding hot set that changed within weeks: re-profile</small></div><div class="n">25–28%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 4 of 64 experts, next code token right</small></div><div class="n">9% → 30%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 4 of 64 experts: 64.0% vs the full model's 69.1% (small model)</small></div><div class="n">64% vs 69%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">Gradient-learned expert gates<small>Relaxed gates never fully close; the strict set they pick collapses</small></div><div class="n">no</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">A learned bias per expert beats one dial<small>Learning which experts stay close helped a little</small></div><div class="n">no</div><span class="st p">Not yet</span></div>
-      <div class="evr"><div class="c">Batching real jobs together<small>7.0 tok/s on a random-token benchmark; ~1.0 on 8 real jobs (RAM thrash)</small></div><div class="n">open</div><span class="st p">Open</span></div>
+      <div class="evr"><div class="c">Batching real jobs together<small>Random-token benchmark said 7.0 tok/s; real graded jobs: 4 at once 1.00 tok/s vs one at a time 1.36</small></div><div class="n">slower</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">Speculative decoding on top<small>Checking k tokens costs ~k tokens: they pick different experts</small></div><div class="n">0.27–0.75×</div><span class="st x">Failed</span></div>
     </div>
 
@@ -412,6 +461,8 @@ footer a { color: var(--acc); }
   const links = [...document.querySelectorAll(".pill a")], secs = links.map(a => document.querySelector(a.getAttribute("href")));
   addEventListener("scroll", () => { let on = -1; secs.forEach((s, i) => { if (s.getBoundingClientRect().top < 200) on = i; }); links.forEach((a, i) => a.classList.toggle("on", i === on)); }, { passive: true });
 
+  const lbars = document.getElementById("lbars");
+  if (lbars) { const go = () => lbars.querySelectorAll(".fl").forEach(f => f.style.width = f.dataset.w + "%"); if (reduce) go(); else new IntersectionObserver((es, o) => es.forEach(e => { if (e.isIntersecting) { go(); o.disconnect(); } }), { threshold: .3 }).observe(lbars); }
   // the live layer: 4 picks per token, mostly from the predicted set
   const cells = mk(document.getElementById("grid"));
   let task = 0, steer = false, hist = [];
