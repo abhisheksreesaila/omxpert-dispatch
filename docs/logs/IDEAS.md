@@ -172,3 +172,12 @@ gpt-oss-120b steered λ=1 via llama-server, 8 graded coding tasks: one at a time
 
 ### 46. Learnable residency (spec's learnable cache), first try (measured 2026-11-06, OLMoE)
 Pick the resident set by router-weighted frequency, not raw counts: 3.5% better at 25% resident, 19% better at 12.5%. Gradient-learned gates and Taylor importance both failed (soft-to-hard gap; re-routing ignored). Next: learn residency by swap search scored with real KL on a held-out slice (non-differentiable but honest), or co-train gates with the adapter using a straight-through hard mask plus an exploration term.
+
+### 47. Learned expert set by swap search (measured 2026-11-06, OLMoE + Granite)
+Keep a swap only if KL to the full model drops on a train slice. OLMoE 8/64: next-token 47.8% → 57.9% (+ adapter 66.2%, full 69.1%); Granite 8/40: 33.7% → 43.8% (+ adapter 57.6%, full 68.7%). One search round + a short adapter = a usable bundle in ~90 s of compute. Co-optimising (search with the adapter active) found no improving swap: search first, then adapt.
+
+### 48. On the 120B: 8 experts per layer is the speed sweet spot; 5k tokens of history is enough (measured, Mac)
+8/layer λ=1: 2.45× for +5.4%; 32/layer λ=0.5: 1.35× for +0.5%. Wrong profile at λ=1: slower and +34.5%. Profile from 5k tokens matches 25k.
+
+### 49. Next: bundles on the 120B
+Needs (a) a llama.cpp hook to add the adapter's residual after each MoE block, (b) a training machine that can run gpt-oss-120b forward/backward (or distil on gpt-oss-20b first), (c) swap search scored on cached teacher logits so each candidate costs one forward pass.

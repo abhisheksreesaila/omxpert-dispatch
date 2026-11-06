@@ -318,7 +318,7 @@ footer a { color: var(--acc); }
   <section id="weekly">
     <div class="eyebrow rv">Malleable</div>
     <h2 class="rv">New week, new work, <span class="acc">new experts.</span></h2>
-    <p class="sub rv">The model stays the same. What changes is which of its experts you keep close. Re-profile overnight when your work shifts. Profiling is fast: our tracer reads about 2,000 tokens a second.</p>
+    <p class="sub rv">The model stays the same. What changes is which of its experts you keep close. Re-profile overnight when your work shifts. Profiling is fast: 5,000 tokens of your history, about four minutes on the 16 GB Mac, is enough for the 120B.</p>
     <div class="weeks">
       <div class="card rv"><span class="k">This week</span><h3>Python web app</h3><div class="grid wk" data-seed="3"></div><div class="when">profile A</div></div>
       <div class="card rv"><span class="k">The weekend</span><h3>Mojo kernels</h3><div class="grid wk" data-seed="11"></div><div class="when">profile B · re-picked overnight</div></div>
@@ -376,6 +376,7 @@ footer a { color: var(--acc); }
       <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">On the 120B, the right profile matters<small>Coding work steered to the coding profile vs the chat profile (16 experts per layer, λ=1): 474 vs 647 ms/token</small></div><div class="n">+8.7% vs +34.5%</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">How many experts the 120B needs<small>8 per layer at λ=1: 2.45× for +5.4%; 32 per layer at λ=0.5: 1.35× for +0.5%</small></div><div class="n">8 of 128</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">The learner needs little history<small>120B profile from 5k tokens (~4 min of profiling on the Mac) matches one from 25k; a small-model bundle learns in ~90 s</small></div><div class="n">5k tokens</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">Gradient-learned expert gates<small>Relaxed gates never fully close; the strict set they pick collapses</small></div><div class="n">no</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">A learned bias per expert beats one dial<small>Learning which experts stay close helped a little</small></div><div class="n">no</div><span class="st p">Not yet</span></div>
       <div class="evr"><div class="c">Batching real jobs together<small>Random-token benchmark said 7.0 tok/s; real graded jobs: 4 at once 1.00 tok/s vs one at a time 1.36</small></div><div class="n">slower</div><span class="st x">Failed</span></div>

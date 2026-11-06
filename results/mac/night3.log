@@ -1,0 +1,58 @@
+# Thu Nov  5 23:19:29 PST 2026 night3 start
+speed exact short_0 ms=1108.60
+speed exact short_1 ms=1411.67
+speed exact short_2 ms=1068.38
+speed n4_l1 short_0 ms=645.00 pinned=144
+speed n4_l1 short_1 ms=699.50 pinned=144
+speed n4_l1 short_2 ms=668.50 pinned=144
+ppl n4_l1 3.8966
+speed n4_l0.5 short_0 ms=1031.45 pinned=144
+speed n4_l0.5 short_1 ms=1014.13 pinned=144
+speed n4_l0.5 short_2 ms=879.73 pinned=144
+ppl n4_l0.5 3.8146
+speed n8_l1 short_0 ms=456.87 pinned=288
+speed n8_l1 short_1 ms=490.56 pinned=288
+speed n8_l1 short_2 ms=516.93 pinned=288
+ppl n8_l1 3.9899
+speed n8_l0.5 short_0 ms=888.04 pinned=288
+speed n8_l0.5 short_1 ms=1017.75 pinned=288
+speed n8_l0.5 short_2 ms=841.02 pinned=288
+ppl n8_l0.5 3.8272
+speed n16_l1 short_0 ms=422.36 pinned=576
+speed n16_l1 short_1 ms=520.44 pinned=576
+speed n16_l1 short_2 ms=477.95 pinned=576
+ppl n16_l1 4.1175
+speed n16_l0.5 short_0 ms=814.36 pinned=576
+speed n16_l0.5 short_1 ms=901.21 pinned=576
+speed n16_l0.5 short_2 ms=950.81 pinned=576
+ppl n16_l0.5 3.8884
+speed n32_l1 short_0 ms=820.13 pinned=1153
+speed n32_l1 short_1 ms=878.10 pinned=1153
+speed n32_l1 short_2 ms=736.59 pinned=1153
+ppl n32_l1 4.0070
+speed n32_l0.5 short_0 ms=875.82 pinned=1153
+speed n32_l0.5 short_1 ms=975.41 pinned=1153
+speed n32_l0.5 short_2 ms=810.98 pinned=1153
+ppl n32_l0.5 3.8056
+# Fri Nov  6 03:41:38 PST 2026 chat trace
+results/pin_gptoss_chat.bin 24760 tokens; top-16 per layer cover 56.3% of routings
+results/pin_gptoss_cod1k.bin 1000 tokens; top-16 per layer cover 65.9% of routings
+results/pin_gptoss_cod5k.bin 5000 tokens; top-16 per layer cover 57.7% of routings
+results/pin_gptoss_cod25k.bin 25363 tokens; top-16 per layer cover 54.0% of routings
+speed chatpin_n16_l1 short_0 ms=694.87 pinned=576
+speed chatpin_n16_l1 short_1 ms=630.55 pinned=576
+speed chatpin_n16_l1 short_2 ms=614.75 pinned=576
+ppl chatpin_n16_l1 5.0953
+speed chatpin_n16_l0.5 short_0 ms=946.57 pinned=576
+speed chatpin_n16_l0.5 short_1 ms=999.77 pinned=576
+speed chatpin_n16_l0.5 short_2 ms=889.00 pinned=576
+ppl chatpin_n16_l0.5 3.8729
+speed cod1k_n16_l1 short_0 ms=594.97 pinned=576
+speed cod1k_n16_l1 short_1 ms=555.53 pinned=576
+speed cod1k_n16_l1 short_2 ms=519.67 pinned=576
+ppl cod1k_n16_l1 4.0898
+speed cod5k_n16_l1 short_0 ms=385.15 pinned=576
+speed cod5k_n16_l1 short_1 ms=470.80 pinned=576
+speed cod5k_n16_l1 short_2 ms=464.60 pinned=576
+ppl cod5k_n16_l1 4.1226
+# Fri Nov  6 05:49:43 PST 2026 night3 done
