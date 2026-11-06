@@ -189,9 +189,9 @@ footer a { color: var(--acc); }
 
   <div class="big rv">
     <div class="card">
-      <div class="stat"><span class="num from" data-count="1.0">1.0</span><span class="arrow">→</span><span class="num to" data-count="7.0">7.0</span></div>
-      <div class="unit">tokens per second · gpt-oss-120b · 8 batched jobs</div>
-      <p class="sub" style="font-size:18px;margin-top:18px">Exact model reading from SSD, versus pinned, steered and batched. Measured on the Mac, not simulated.</p>
+      <div class="stat"><span class="num from" data-count="1.0">1.0</span><span class="arrow">→</span><span class="num to" data-count="2.96">2.96</span></div>
+      <div class="unit">tokens per second · gpt-oss-120b · one job, real text</div>
+      <p class="sub" style="font-size:18px;margin-top:18px">Exact model reading from SSD, versus steered toward the coding profile (λ=1, +8.3% perplexity). Measured on the Mac, not simulated.</p>
     </div>
     <div class="card">
       <div class="spec">
@@ -254,11 +254,11 @@ footer a { color: var(--acc); }
   <section id="levers">
     <div class="eyebrow rv">What did the work</div>
     <h2 class="rv">Pin. Steer. <span class="acc">Batch.</span></h2>
-    <p class="sub rv">We tried more than forty ideas. Three levers did almost all of the work, and they stack.</p>
+    <p class="sub rv">We tried more than forty ideas. Pin and steer did the work. Batch is the open one: it wins on benchmarks, not yet on real jobs.</p>
     <div class="levers">
       <div class="card lever rv"><h3>Pin</h3><div class="bn" data-count="32" data-suf="%">32%</div><div class="bl">faster · exact output · 2×RTX 3090</div><p>Keep the session profile's experts in the fastest memory, instead of llama.cpp's default split by layer.</p></div>
       <div class="card lever rv"><h3>Steer</h3><div class="bn" data-count="2.85" data-suf="×">2.85×</div><div class="bl">gpt-oss-120b · +8.3% perplexity</div><p>Nudge the router toward experts already loaded. One dial, λ. At λ=0.5 it's 1.46× for +2.0%.</p></div>
-      <div class="card lever rv"><h3>Batch</h3><div class="bn" data-count="7.0" data-suf="">7.0</div><div class="bl">tok/s total · 8 jobs · steered</div><p>Independent jobs share each layer's expert reads. Steering herds them onto the same experts, so batching pays.</p></div>
+      <div class="card lever rv"><h3>Batch</h3><div class="bn" style="color:var(--warm)">Open</div><div class="bl">7.0 tok/s on random tokens · ~1.0 on 8 real jobs</div><p>On a benchmark, 8 steered jobs share expert reads. Eight real coding jobs touch more experts than fit in RAM and thrash. Fewer jobs at once is being measured.</p></div>
     </div>
   </section>
 
@@ -269,11 +269,12 @@ footer a { color: var(--acc); }
       <div class="rowc"><div class="lbl">Exact model<small>experts read from SSD</small></div><div class="track"><div class="fill base" data-v="1.04">1.04</div></div><div class="cost">ppl 3.787</div></div>
       <div class="rowc"><div class="lbl">Steer λ=0.5<small>gentle</small></div><div class="track"><div class="fill" data-v="1.51">1.51</div></div><div class="cost ok">+2.0% ppl</div></div>
       <div class="rowc"><div class="lbl">Steer λ=1<small>firm</small></div><div class="track"><div class="fill" data-v="2.96">2.96</div></div><div class="cost">+8.3% ppl</div></div>
-      <div class="rowc"><div class="lbl">Steer λ=1, 8 jobs<small>background batch</small></div><div class="track"><div class="fill" data-v="7.0">7.0 total</div></div><div class="cost">+8.3% ppl</div></div>
+      <div class="rowc"><div class="lbl">Steer λ=1, 8 jobs<small>random-token benchmark</small></div><div class="track"><div class="fill base" data-v="7.0">7.0 total</div></div><div class="cost">not real text</div></div>
+      <div class="rowc"><div class="lbl">Steer λ=1, 8 jobs<small>real coding tasks</small></div><div class="track"><div class="fill slow" data-v="1.04">~1.0 total</div></div><div class="cost no">RAM thrash</div></div>
       <div class="rowc"><div class="lbl">Steer λ=2<small>too far</small></div><div class="track"><div class="fill slow" data-v="6.76">6.76</div></div><div class="cost no">+86% · unusable</div></div>
       <div class="rowc"><div class="lbl">Speculative decoding<small>EAGLE3 head, best case</small></div><div class="track"><div class="fill slow" data-v="0.66">0.66</div></div><div class="cost no">slower than exact</div></div>
     </div>
-    <p class="cap rv">Tokens per second, single job unless noted. Perplexity on 4 × 512 tokens of held-out code: treat ±1–2% as noise. Smaller model, same Mac: Qwen3-Coder-30B steered is 1.64× for +1.1%, and 26.6 tok/s batched.</p>
+    <p class="cap rv">Tokens per second, single job unless noted. Perplexity on 4 × 512 tokens of held-out code: treat ±1–2% as noise. Smaller model, same Mac: Qwen3-Coder-30B steered is 1.64× for +1.1% (its 26.6 tok/s batched figure is also a random-token benchmark).</p>
 
     <div class="three">
       <div class="card rv"><span class="k">Personal profiles</span><h3>+11 points</h3><p>On a 256-expert model, a profile from your own coding beats one from your other work at a 25% cache, and nearly doubles it at 6%.</p></div>
@@ -291,7 +292,7 @@ footer a { color: var(--acc); }
       <div class="card fail rv"><div class="bn">0 gain</div><h3>Skip the missing expert</h3><p>Dropping it cost as much quality as steering and gave no speed. A nearby expert beats no expert.</p></div>
       <div class="card fail rv"><div class="bn">= one dial</div><h3>A learned router bias</h3><p>A trained bias per expert landed on the same trade-off curve as a single hand-set λ.</p></div>
       <div class="card fail rv"><div class="bn">Lost</div><h3>Plain pinning on a Mac</h3><p>macOS's page cache already keeps hot pages in memory. Steering is the lever on unified memory.</p></div>
-      <div class="card fail rv"><div class="bn">1.44×</div><h3>Batching without steering</h3><p>With 4 of 128 experts per token, separate jobs rarely share experts until steering pulls them together.</p></div>
+      <div class="card fail rv"><div class="bn">~1.0 tok/s</div><h3>Eight real jobs at once</h3><p>The benchmark said 7.0, but it feeds random tokens. Eight real coding jobs need more experts than 16 GB holds, and macOS pages them in and out.</p></div>
     </div>
   </section>
 
@@ -301,7 +302,7 @@ footer a { color: var(--acc); }
     <div class="lanes rv">
       <div class="card lane"><span class="k">Chat lane · small model</span><h3>Understands and plans</h3><ul><li>Talks with you, fast</li><li>Names the task: coding, search, tools, docs</li><li>Writes the work as a batch of independent jobs</li><li>Steps aside: 16 GB can't hold both</li></ul></div>
       <div class="hand" aria-hidden="true">→<span>hand off</span></div>
-      <div class="card lane work"><span class="k">Work lane · gpt-oss-120b</span><h3>Full intelligence, batched</h3><ul><li>Loads that task's experts (pin)</li><li>Steers toward them, λ set per model</li><li>Runs the batch together (batch)</li><li>~7 tok/s total while you're away</li></ul></div>
+      <div class="card lane work"><span class="k">Work lane · gpt-oss-120b</span><h3>Full intelligence, batched</h3><ul><li>Loads that task's experts (pin)</li><li>Steers toward them, λ set per model</li><li>Works through the batch while you're away</li><li>~3 tok/s per job today; how many jobs at once is open</li></ul></div>
     </div>
 
     <div class="open">

@@ -4,7 +4,7 @@
 
 **Run a mixture-of-experts model far bigger than your memory by loading only the experts *your* work uses.**
 
-A 63 GB model (gpt-oss-120b, as released, MXFP4) on a 16 GB MacBook Pro (Apple M4). Exact model: 1.0 tok/s. With the three levers below: up to 7.0 tok/s for batched background work.
+A 63 GB model (gpt-oss-120b, as released, MXFP4) on a 16 GB MacBook Pro (Apple M4). Exact model: 1.04 tok/s. Steered toward the coding profile: 2.96 tok/s on real text (λ=1, +8.3% perplexity).
 
 This is a research log, not a product. Every number here was measured on real hardware unless marked *simulated*. Failures are reported alongside wins.
 
@@ -23,15 +23,15 @@ You don't need the whole model in fast memory. You need the slice your session u
 
 ## What we found: Pin, Steer, Batch
 
-Three levers did almost all the work:
+Pin and steer did the work; batch is still open (see the correction below):
 
 | Lever | What it does | Best measured result |
 |---|---|---|
 | **Pin** | Keep the session profile's experts in the fastest memory | Linux, 2×RTX 3090: **32% faster** than llama.cpp's default placement, exact output |
 | **Steer** | Nudge the router toward experts already loaded (`logit − λ` for non-resident experts) | Mac M4 16 GB, Qwen3-Coder-30B: **1.64×** for +1.1% perplexity. gpt-oss-120b: **1.46×** for +2.0% (λ=0.5), **2.85×** for +8.3% (λ=1) |
-| **Batch** | Run independent jobs together so they share each layer's expert reads | gpt-oss-120b, steered, 8 jobs: **1.0 → 7.0 tok/s total**. Qwen3-Coder-30B: **26.6 tok/s total** |
+| **Batch** | Run independent jobs together so they share each layer's expert reads | Benchmark only: 7.0 tok/s total (gpt-oss-120b, 8 jobs) and 26.6 (Qwen3-Coder-30B), **measured on random tokens**. Eight real coding jobs: **~1.0 tok/s total** (RAM thrash). Open |
 
-Steering is what makes batching pay off on a top-4 model: without it, 8 jobs share few experts (only 1.44×). Steering herds them onto the same loaded experts.
+**Correction (2026-11-05):** `llama-batched-bench` feeds random tokens, not text. On real coding jobs, 8 at once ran at ~1.0 tok/s total on the 16 GB Mac, worse than one steered job (2.96): eight different jobs touch more experts than fit in RAM, and macOS pages them in and out. Batching on real text with fewer jobs (1 vs 4) is being measured.
 
 ### Results on the 16 GB Mac (Apple M4, unified memory, SSD as the cold tier)
 
@@ -43,7 +43,8 @@ gpt-oss-120b MXFP4 (63 GB, 4× the RAM), coding:
 | Steer λ=0.5 | 1.51 | 1.46× | 3.862 (+2.0%) |
 | Steer λ=1 | 2.96 | 2.85× | 4.100 (+8.3%) |
 | Steer λ=2 | 6.76 | 6.5× | 7.046 (+86%, unusable) |
-| Steer λ=1, 8 jobs batched | **7.0 total** | 6.7× | same as λ=1 |
+| Steer λ=1, 8 jobs, random-token benchmark | 7.0 total | not real text | same as λ=1 |
+| Steer λ=1, 8 real coding jobs (llama-server) | ~1.0 total | worse than one job | same as λ=1 |
 | Speculative decoding (EAGLE3 head) | 0.24–0.66 | 0.27–0.75× | lossless, but slower |
 
 Practical check (8 real coding tasks, answers graded by running hidden tests): see [`results/mac/work.log`](results/mac/work.log) and the section below.
@@ -74,7 +75,7 @@ On Qwen3.6-35B-A3B (256 experts per layer), a profile built from your own coding
          • understands, plans                • loads the profile's experts (pin)
          • classifies the task type ───────► • steers toward them (λ per model)
          • writes a batch of work items      • runs the batch together (batch)
-         • steps aside (16 GB can't hold both)  ~7 tok/s total on gpt-oss-120b
+         • steps aside (16 GB can't hold both)  ~3 tok/s per job on gpt-oss-120b
 ```
 
 ## Open directions (not done)

@@ -117,3 +117,7 @@ Run 6 grid results (19:20-19:59, chat-format coding prompt, 52-token prompt, ~10
 - Steering does not rescue it: steering + EAGLE3 is slower than steering alone.
 - Two models at once does not fit: 120B + 20B ran Metal out of memory. A chat lane must take turns with the 120B, not run beside it.
 - steer λ=0.5 gave only 1.15x on this short chat prompt (1.46x in run 5 on 1,200-byte coding prompts): the speed-up depends on the prompt.
+
+## 2026-11-05 run 7: work lane on real text (correction to the batching result)
+llama-server, gpt-oss-120b, steer λ=1, 8 slots, 8 real coding tasks at once: ~0.13 tok/s per slot = ~1.0 tok/s total after 20 minutes (126 tokens each). Steering was confirmed active (EDX pin log lines). macOS showed 136k pageouts.
+`llama-batched-bench` (runs 3 and 5) feeds random tokens, so its 7.0 tok/s (gpt-oss) and 26.6 tok/s (Qwen-30B) batched figures are not real-text numbers. On real text, 8 different jobs touch more experts than 16 GB holds and thrash; one steered job (2.96 tok/s) is faster than 8 together. Re-measuring with 1 and 4 slots.
