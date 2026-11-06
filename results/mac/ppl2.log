@@ -1,0 +1,4 @@
+plain ppl=3.1379 s_per_pass=51.48
+steeronly6g_l0.5 ppl=3.1579 s_per_pass=33.82
+steeronly6g_l1 ppl=3.1717 s_per_pass=23.24
+steeronly6g_l2 ppl=3.3273 s_per_pass=17.42

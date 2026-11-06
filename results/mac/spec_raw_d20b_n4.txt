@@ -1,0 +1,56 @@
+0.00.213.665 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.00.213.829 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.00.214.093 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.00.214.305 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.00.214.418 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+0.00.229.608 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.35.485.224 I cmn          init: llama threadpool init, n_threads = 4
+0.38.545.151 I common_speculative_init_result: loading draft model 'models/gptoss/gpt-oss-20b-MXFP4.gguf'
+0.38.646.994 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.38.647.155 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.38.647.392 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.38.647.603 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.38.647.713 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+0.45.329.958 W ggml_metal_log_allocated_size: warning: current allocated size is greater than the recommended max working set size
+0.48.231.744 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+0.48.231.817 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+
+
+<|start|>user<|message|>Write a Python function that reads a CSV file of bank transactions (date, description, amount) and returns total spending per month as a dict. Include type hints, handle malformed rows, and add three pytest tests.<|end|><|start|>assistant<|channel|>final<|message|>1.40.257.068 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.073 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.136 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.137 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.137 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.137 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.196 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.197 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.197 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.198 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.198 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.198 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.229 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.230 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.230 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.230 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.230 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.230 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.231 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.231 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.233 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.233 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.233 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.234 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.234 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.234 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.236 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.236 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.236 E ggml_metal_graph_compute: backend is in error state from a previous command buffer failure - recreate the backend to recover
+1.40.257.239 E graph_compute: ggml_backend_sched_graph_compute_async failed with error -1
+1.40.257.240 E process_ubatch: failed to compute graph, compute status: -1
+1.40.257.241 W decode: removing memory module entries for seq_id = 0, pos = [0, +inf)
+1.40.257.251 E spec      process: failed to decode draft batch, ret = -3
+1.40.257.252 E failed to process speculative prompt
+1.40.257.269 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.270 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+1.40.257.297 E ggml_metal_synchronize: error: command buffer 0 failed with status 5
+1.40.257.299 E error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)

@@ -1,0 +1,79 @@
+{
+ "tag": "design_chat",
+ "profile": "design_chat",
+ "tokens": 30000,
+ "runs": [
+  {
+   "S": 32,
+   "lambda": 1.0,
+   "accept": 0.7938666939735413,
+   "tok_per_verify_k2": 2.4240910217740215,
+   "tok_per_verify_k4": 3.3215878286982528,
+   "tok_per_verify_k8": 4.24368235856872
+  },
+  {
+   "S": 32,
+   "lambda": 2.0,
+   "accept": 0.6429666876792908,
+   "tok_per_verify_k2": 2.0563728491445694,
+   "tok_per_verify_k4": 2.493083893785566,
+   "tok_per_verify_k8": 2.7482588805498107
+  },
+  {
+   "S": 32,
+   "lambda": Infinity,
+   "accept": 0.5544999837875366,
+   "tok_per_verify_k2": 1.861970215807915,
+   "tok_per_verify_k4": 2.1270003980570302,
+   "tok_per_verify_k8": 2.233544698101679
+  },
+  {
+   "S": 16,
+   "lambda": 1.0,
+   "accept": 0.7595000267028809,
+   "tok_per_verify_k2": 2.336340317264557,
+   "tok_per_verify_k4": 3.1071952541647283,
+   "tok_per_verify_k8": 3.8083533507150533
+  },
+  {
+   "S": 16,
+   "lambda": 2.0,
+   "accept": 0.49113333225250244,
+   "tok_per_verify_k2": 1.7323452823019494,
+   "tok_per_verify_k4": 1.9089957159555155,
+   "tok_per_verify_k8": 1.9618839999016888
+  },
+  {
+   "S": 16,
+   "lambda": Infinity,
+   "accept": 0.32233333587646484,
+   "tok_per_verify_k2": 1.4262321152937147,
+   "tok_per_verify_k4": 1.4705171118211642,
+   "tok_per_verify_k8": 1.4755963235119745
+  },
+  {
+   "S": 8,
+   "lambda": 1.0,
+   "accept": 0.795199990272522,
+   "tok_per_verify_k2": 2.427543014801941,
+   "tok_per_verify_k4": 3.330239882427646,
+   "tok_per_verify_k8": 4.2620042438270564
+  },
+  {
+   "S": 8,
+   "lambda": 2.0,
+   "accept": 0.6276999711990356,
+   "tok_per_verify_k2": 2.021707225042306,
+   "tok_per_verify_k4": 2.4242672830130525,
+   "tok_per_verify_k8": 2.6453729801861865
+  },
+  {
+   "S": 8,
+   "lambda": Infinity,
+   "accept": 0.06333333253860474,
+   "tok_per_verify_k2": 1.0673444435490502,
+   "tok_per_verify_k4": 1.0676145695880621,
+   "tok_per_verify_k8": 1.0676156574396525
+  }
+ ]
+}

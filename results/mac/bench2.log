@@ -1,0 +1,38 @@
+# Thu Nov  5 13:20:32 PST 2026 start
+experts_cpu p09 ms=162.74
+experts_cpu p00 ms=240.41
+experts_cpu p01 ms=165.33
+experts_cpu p02 ms=174.58
+experts_cpu p03 ms=225.02
+steeronly4g_l1 p09 ms=102.61
+steeronly4g_l1 p00 ms=148.86
+steeronly4g_l1 p01 ms=113.08
+steeronly4g_l1 p02 ms=111.81
+steeronly4g_l1 p03 ms=126.59
+steeronly6g_l1 p09 ms=105.23
+steeronly6g_l1 p00 ms=152.91
+steeronly6g_l1 p01 ms=113.13
+steeronly6g_l1 p02 ms=109.84
+steeronly6g_l1 p03 ms=115.77
+steeronly8g_l1 p09 ms=111.70
+steeronly8g_l1 p00 ms=157.21
+steeronly8g_l1 p01 ms=118.87
+steeronly8g_l1 p02 ms=120.95
+steeronly8g_l1 p03 ms=123.79
+steeronly6g_l0.5 p09 ms=123.72
+steeronly6g_l0.5 p00 ms=186.51
+steeronly6g_l0.5 p01 ms=137.02
+steeronly6g_l0.5 p02 ms=136.96
+steeronly6g_l0.5 p03 ms=164.86
+steeronly6g_l2 p09 ms=92.42
+steeronly6g_l2 p00 ms=99.91
+steeronly6g_l2 p01 ms=98.06
+steeronly6g_l2 p02 ms=101.38
+steeronly6g_l2 p03 ms=97.90
+pin6g_steer1 p09 ms=106.23
+pin6g_steer1 p00 ms=126.42
+pin6g_steer1 p01 ms=101.79
+pin6g_steer1 p02 ms=99.19
+pin6g_steer1 p03 ms=114.57
+# Thu Nov  5 13:49:27 PST 2026 speed done
+# Thu Nov  5 14:10:13 PST 2026 done

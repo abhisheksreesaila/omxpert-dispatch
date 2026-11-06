@@ -1,0 +1,23 @@
+# Thu Nov  5 16:40:44 PST 2026 start: steering fixed for logit routers (logit - lambda)
+steer0.5 short_0 ms=566.19 pp_ms=235.90
+steer0.5 short_1 ms=733.50 pp_ms=184.29
+steer0.5 short_2 ms=684.34 pp_ms=236.59
+steer1 short_0 ms=290.95 pp_ms=236.32
+steer1 short_1 ms=368.38 pp_ms=183.41
+steer1 short_2 ms=354.64 pp_ms=233.33
+steer2 short_0 ms=153.44 pp_ms=237.85
+steer2 short_1 ms=133.55 pp_ms=182.98
+steer2 short_2 ms=156.54 pp_ms=236.41
+ppl steer1 4.1003
+ppl steer2 7.0459
+ppl steer0.5 3.8624
+# Thu Nov  5 17:31:08 PST 2026 batched, steer λ=1
+|    PP |     TG |    B |   N_KV |   T_PP s | S_PP t/s |   T_TG s | S_TG t/s |      T s |    S t/s |
+|-------|--------|------|--------|----------|----------|----------|----------|----------|----------|
+|   128 |     32 |    1 |    160 |   38.541 |     3.32 |   10.622 |     3.01 |   49.163 |     3.25 |
+|   128 |     32 |    2 |    320 |   42.252 |     6.06 |   15.401 |     4.16 |   57.653 |     5.55 |
+|   128 |     32 |    4 |    640 |   53.447 |     9.58 |   21.574 |     5.93 |   75.021 |     8.53 |
+|   128 |     32 |    8 |   1280 |  108.919 |     9.40 |   36.664 |     6.98 |  145.583 |     8.79 |
+# Thu Nov  5 17:37:26 PST 2026 done
+
+[exited with code 0]

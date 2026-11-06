@@ -1,0 +1,7 @@
+**Solution Overview**
+
+Below is a self‑contained implementation that satisfies every requirement:
+
+* **`monthly_spending`** – reads a CSV file (`date,description,amount`), parses each row, skips malformed rows, and returns a `dict[datetime.date, float]` where the key is the first day of the month (`YYYY‑MM‑01`) and the value is the total *spending* (negative amounts) for that month.  
+* Full type
+

@@ -1,0 +1,7 @@
+**Solution Overview**
+
+Below is a compact, well‑documented implementation that satisfies every part of the request:
+
+* **`monthly_spending`** – reads a CSV file (`date,description,amount`), skips malformed rows, and returns a `dict[YearMonth, float]` where the key is a `YYYY‑MM` string and the value is the total *spending* (negative amounts) for that month.  
+* Full type hints, doc‑
+

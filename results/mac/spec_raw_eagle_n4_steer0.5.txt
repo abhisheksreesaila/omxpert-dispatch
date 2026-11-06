@@ -1,0 +1,48 @@
+0.00.210.392 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.00.210.568 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.00.210.842 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.00.211.086 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.00.211.207 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+0.00.226.606 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.35.142.608 I cmn          init: llama threadpool init, n_threads = 4
+0.38.070.135 I common_speculative_init_result: loading draft model 'models/gptoss/eagle3-gpt-oss-120b-Q8_0.gguf'
+0.38.173.504 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.38.173.668 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.38.173.897 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.38.174.111 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.38.174.225 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+
+
+<|start|>user<|message|>Write a Python function that reads a CSV file of bank transactions (date, description, amount) and returns total spending per month as a dict. Include type hints, handle malformed rows, and add three pytest tests.<|end|><|start|>assistant<|channel|>final<|message|>**Solution Overview**
+
+Below is a self‑contained Python module that
+
+1. **Parses** a CSV file containing bank transactions (`date, description, amount`).
+2. **Aggregates** the amounts per month (only negative amounts are considered *spending*).
+3. **Handles** malformed rows gracefully – they are ignored and a warning is logged.
+4. **Provides** type hints for static analysis.
+5. **Ships** with three `pytest` unit‑tests that cover the
+
+4.28.046.727 I encoded   52 tokens in   46.071 seconds, speed:    1.129 t/s
+4.28.046.729 I decoded  100 tokens in  181.068 seconds, speed:    0.552 t/s
+4.28.046.729 I 
+4.28.046.729 I n_draft   = 4
+4.28.046.730 I n_predict = 100
+4.28.046.731 I n_drafted = 147
+4.28.046.731 I n_accept  = 63
+4.28.046.731 I accept    = 42.857%
+4.28.046.731 I 
+4.28.046.731 I draft:
+
+4.28.047.234 I 
+4.28.047.236 I target:
+
+4.28.047.238 I common_perf_print:    sampling time =      34.81 ms
+4.28.047.239 I common_perf_print:    samplers time =      10.76 ms /   100 tokens
+4.28.047.239 I common_perf_print:        load time =   37921.79 ms
+4.28.047.240 I common_perf_print: prompt eval time =  174750.97 ms /   237 tokens (  737.35 ms per token,     1.36 tokens per second)
+4.28.047.241 I common_perf_print:        eval time =       0.00 ms /     1 runs   (    0.00 ms per token,      inf tokens per second)
+4.28.047.241 I common_perf_print:       total time =  229977.12 ms /   238 tokens
+4.28.047.242 I common_perf_print: unaccounted time =   55191.34 ms /  24.0 %      (total - sampling - prompt eval - eval) / (total)
+4.28.047.243 I common_perf_print:    graphs reused =         35
+4.28.047.243 I common_perf_print:   graph reallocs =          0    /     0        (same size) / (changed size)

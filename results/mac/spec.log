@@ -1,0 +1,12 @@
+# Thu Nov  5 19:20:24 PST 2026 start
+exact_warm eval_ms_per_tok=1124.06
+exact eval_ms_per_tok=1126.84
+eagle_n2 dec_tps=0.663 pred=99 drafted=83 accept=68.675 
+eagle_n4 dec_tps=0.540 pred=101 drafted=134 accept=50.000 
+eagle_n8 dec_tps=0.237 pred=100 drafted=296 accept=20.608 
+steer0.5 eval_ms_per_tok=979.73
+eagle_n4_steer0.5 dec_tps=0.552 pred=100 drafted=147 accept=42.857 
+eagle_n2_steer1 dec_tps=0.898 pred=98 drafted=99 accept=48.485 
+d20b_n4 
+exact_end eval_ms_per_tok=1103.45
+# Thu Nov  5 19:59:28 PST 2026 done

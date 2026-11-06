@@ -1,0 +1,32 @@
+{
+ "sum:pin_coding": {
+  "sim_ms": 20.45,
+  "measured_ms": 24.9,
+  "err_%": -17.9
+ },
+ "sum:pin_mixed": {
+  "sim_ms": 21.58,
+  "measured_ms": NaN,
+  "err_%": NaN
+ },
+ "sum:layers": {
+  "sim_ms": 27.67,
+  "measured_ms": NaN,
+  "err_%": NaN
+ },
+ "max:pin_coding": {
+  "sim_ms": 19.87,
+  "measured_ms": 24.9,
+  "err_%": -20.2
+ },
+ "max:pin_mixed": {
+  "sim_ms": 21.07,
+  "measured_ms": NaN,
+  "err_%": NaN
+ },
+ "max:layers": {
+  "sim_ms": 27.67,
+  "measured_ms": NaN,
+  "err_%": NaN
+ }
+}

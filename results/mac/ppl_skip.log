@@ -1,0 +1,6 @@
+# Thu Nov  5 14:35:05 PST 2026 start (during the 122B copy: s/pass not comparable)
+skip_top16mass ppl=3.2467 s_per_pass=43.23
+skip_top8mass ppl=3.1700 s_per_pass=53.33
+skip_survivors ppl=3.1883 s_per_pass=53.84
+steer1_skip16 ppl=3.5533 s_per_pass=22.54
+# Thu Nov  5 15:03:20 PST 2026 done

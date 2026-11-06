@@ -1,0 +1,47 @@
+0.00.206.017 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.00.206.198 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.00.206.476 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.00.206.724 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.00.206.845 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+0.00.222.925 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.36.322.672 I cmn          init: llama threadpool init, n_threads = 4
+0.39.206.756 I common_speculative_init_result: loading draft model 'models/gptoss/eagle3-gpt-oss-120b-Q8_0.gguf'
+0.39.311.913 W load: setting token '<|message|>' (200008) attribute to USER_DEFINED (16), old attributes: 8
+0.39.312.075 W load: setting token '<|channel|>' (200005) attribute to USER_DEFINED (16), old attributes: 8
+0.39.312.314 W load: setting token '<|start|>' (200006) attribute to USER_DEFINED (16), old attributes: 8
+0.39.312.527 W load: setting token '<|constrain|>' (200003) attribute to USER_DEFINED (16), old attributes: 8
+0.39.312.642 W load: special_eog_ids contains both '<|return|>' and '<|call|>', or '<|calls|>' and '<|flush|>' tokens, removing '<|end|>' token from EOG list
+
+
+<|start|>user<|message|>Write a Python function that reads a CSV file of bank transactions (date, description, amount) and returns total spending per month as a dict. Include type hints, handle malformed rows, and add three pytest tests.<|end|><|start|>assistant<|channel|>final<|message|>**Solution Overview**
+
+Below is a compact, well‑documented solution that
+
+1. **Parses** a CSV file containing `date,description,amount` rows.  
+2. **Aggregates** the *absolute* amount of every transaction (treating the amount as a spending value) per month (`YYYY‑MM`).  
+3. **Handles** malformed rows gracefully – they are ignored but counted, and a warning is logged.  
+4. Returns a `dict[str
+
+3.17.032.087 I encoded   52 tokens in   46.289 seconds, speed:    1.123 t/s
+3.17.032.089 I decoded   98 tokens in  109.150 seconds, speed:    0.898 t/s
+3.17.032.089 I 
+3.17.032.089 I n_draft   = 2
+3.17.032.089 I n_predict = 98
+3.17.032.089 I n_drafted = 99
+3.17.032.089 I n_accept  = 48
+3.17.032.090 I accept    = 48.485%
+3.17.032.091 I 
+3.17.032.091 I draft:
+
+3.17.032.404 I 
+3.17.032.405 I target:
+
+3.17.032.406 I common_perf_print:    sampling time =      41.79 ms
+3.17.032.407 I common_perf_print:    samplers time =      11.02 ms /    98 tokens
+3.17.032.408 I common_perf_print:        load time =   39062.06 ms
+3.17.032.408 I common_perf_print: prompt eval time =  105535.79 ms /   202 tokens (  522.45 ms per token,     1.91 tokens per second)
+3.17.032.410 I common_perf_print:        eval time =       0.00 ms /     1 runs   (    0.00 ms per token,      inf tokens per second)
+3.17.032.411 I common_perf_print:       total time =  157825.67 ms /   203 tokens
+3.17.032.412 I common_perf_print: unaccounted time =   52248.09 ms /  33.1 %      (total - sampling - prompt eval - eval) / (total)
+3.17.032.412 I common_perf_print:    graphs reused =         48
+3.17.032.413 I common_perf_print:   graph reallocs =          0    /     0        (same size) / (changed size)

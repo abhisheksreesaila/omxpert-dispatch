@@ -1,0 +1,68 @@
+{
+ "always_15": {
+  "freq_pins_global": 17.831478190000002,
+  "whole_layers": 27.672400000000035,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 17.841054453333335,
+  "dp_hybrid_freq_whole_layers": 0,
+  "dp_pins_freq": 17.841054453333335,
+  "dp_hybrid_setc": 17.868830276666667,
+  "dp_hybrid_setc_whole_layers": 0,
+  "dp_pins_setc": 17.868830276666667
+ },
+ "always_30": {
+  "freq_pins_global": 14.272616483333337,
+  "whole_layers": 23.990800000000032,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 14.260556310000004,
+  "dp_hybrid_freq_whole_layers": 0,
+  "dp_pins_freq": 14.260556310000004,
+  "dp_hybrid_setc": 14.275179540000002,
+  "dp_hybrid_setc_whole_layers": 0,
+  "dp_pins_setc": 14.275179540000002
+ },
+ "always_60": {
+  "freq_pins_global": 10.965756426666672,
+  "whole_layers": 16.627600000000005,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 10.452062300000001,
+  "dp_hybrid_freq_whole_layers": 11,
+  "dp_pins_freq": 10.952658463333341,
+  "dp_hybrid_setc": 10.445815310000004,
+  "dp_hybrid_setc_whole_layers": 10,
+  "dp_pins_setc": 10.895549090000005
+ },
+ "skip_15": {
+  "freq_pins_global": 17.62272881,
+  "whole_layers": 27.672400000000035,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 17.635729460000004,
+  "dp_hybrid_freq_whole_layers": 0,
+  "dp_pins_freq": 17.635729460000004,
+  "dp_hybrid_setc": 17.635729460000004,
+  "dp_hybrid_setc_whole_layers": 0,
+  "dp_pins_setc": 17.635729460000004
+ },
+ "skip_30": {
+  "freq_pins_global": 13.683038423333334,
+  "whole_layers": 23.990800000000032,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 13.679287793333334,
+  "dp_hybrid_freq_whole_layers": 0,
+  "dp_pins_freq": 13.679287793333334,
+  "dp_hybrid_setc": 13.677958326666669,
+  "dp_hybrid_setc_whole_layers": 0,
+  "dp_pins_setc": 13.677958326666669
+ },
+ "skip_60": {
+  "freq_pins_global": 9.201961086666666,
+  "whole_layers": 16.627600000000005,
+  "no_gpu_experts": 31.354000000000042,
+  "dp_hybrid_freq": 9.208209579999998,
+  "dp_hybrid_freq_whole_layers": 0,
+  "dp_pins_freq": 9.208209579999998,
+  "dp_hybrid_setc": 9.207163903333331,
+  "dp_hybrid_setc_whole_layers": 0,
+  "dp_pins_setc": 9.207163903333331
+ }
+}

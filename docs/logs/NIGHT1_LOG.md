@@ -1,0 +1,61 @@
+# Night 1 log
+- 2026-11-04T00:06:14-08:00 START. Owner left REPO_PATHS etc. unfilled; chose: REPO_PATHS=~/Projects/* (owner code), TRANSCRIPT_PATHS=~/.claude/projects, NOTES_PATHS=docs/*.md inside repos. MODEL_DIR=~/models.
+- 2026-11-04T00:06:14-08:00 Preflight: 2x RTX 3090 (24GB), 62GiB RAM (29GiB avail), 375G free disk, 24 cores, CUDA 13.3, kernel 7.2.5. No GGUF on disk. HF cache has granite-3.1-1b-a400m (MoE 32e top8). OLMoE cache is a stub.
+- Plan: small-model prototype first (PyTorch/transformers router tracing, no C++ needed), then llama.cpp + Qwen3.6-35B-A3B per runbook.
+- 2026-11-04T00:12:25-08:00 Owner asked: prefer Modular MAX/Mojo, fall back to torch/llama.cpp only where MAX can't. MAX 26.7 nightly (mxstudio env) has MoE archs GptOss, Qwen3Moe, Qwen3_5 — safetensors only; Ampere => bf16 or MXFP4-dequant. Chose openai/gpt-oss-20b (MXFP4, ~13GB) as MAX model. Download ~7MB/s, so Qwen GGUF deprioritized.
+- 2026-11-04T07:28:21-08:00 Session crashed ~00:35, resumed 07:30. GPU0 busy with another session (mxframe tests); running OLMoE torch fallback on GPU1.
+- 2026-11-04T08:09:40-08:00 imatrix job hit 30-min tool limit after 5/20 slices; shrank non-coding slices (train 100K tok, halves 50K tok) and restarted with longer timeout.
+- 2026-11-04T08:24:25-08:00 master start (T3 restart killed previous jobs)
+- 2026-11-04T08:24:55-08:00 MAX: GPU0 free, starting serve
+- 2026-11-04T08:25:26-08:00 MAX: WARNING hooks not seen in worker yet
+- 2026-11-04T08:25:27-08:00 MAX: FAILED: no trace shards written; see max/serve.log
+- 2026-11-04T08:25:28-08:00 MAX stage exit 0
+- 2026-11-04T08:27:39-08:00 BIAS (OLMoE coding): S=16/64 lam=1 -> hit 94% (vs ~69% unbiased) for +3.2% ppl; S=32 lam=0.5 -> 96.5% for +0.6%. Hard mask much worse (+45% at S=16).
+- 2026-11-04T08:28:54-08:00 Machine had hung+rebooted (load from mxframe agents + my jobs). Cancelled queued MAX + chat-bias jobs; imatrix reniced to 19.
+- 2026-11-04T09:31:46-08:00 master done
+- 2026-11-04T09:32:24-08:00 Qwen imatrix done: own-vs-other profile +11 pts coding @25%; overlap 0.43; churn coding 25% docs 28%. Report updated.
+- 2026-11-04T14:15:25-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:18:47-08:00 MAX retry: util 0.92, act 4 GiB
+- 2026-11-04T14:19:48-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:19:48-08:00 MAX retry exit 0
+- 2026-11-04T14:25:08-08:00 MAX hooks fixed: worker never loaded the plugin; added env-gated lazy autoload (.pth + meta_path on gpt_oss.arch). Smoke: 16 shards [T,96]. (Eager .pth import caused a 355-process runaway; killed, ~1 min.)
+- 2026-11-04T14:25:08-08:00 MAXFULL: machine busy (RAM avail 38G, GPU 23852/23495 MiB) - not starting
+- 2026-11-04T14:25:08-08:00 MAX full run exit 0
+- 2026-11-04T14:25:47-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:25:47-08:00 MAX full run exit 0
+- 2026-11-04T14:26:33-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:26:34-08:00 MAX full run exit 0
+- 2026-11-04T14:27:10-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:27:11-08:00 MAX full run exit 0
+- 2026-11-04T14:27:56-08:00 MAXFULL: no trace shards; hooks did not fire
+- 2026-11-04T14:27:56-08:00 MAX full run exit 0
+- 2026-11-04T14:29:05-08:00 MAX: tracing proven (smoke, 16 shards) but full serve OOMs at load on 2x3090 at util 0.88/0.92/0.95 (19.4 of 21 GB pool used on cuda0; GPU1 also drives the display). Smoke fit once by luck. Stopped tuning.
+- 2026-11-04T14:29:05-08:00 LEARNED CACHE S=16: mu1 92.1% hit +3.7% ppl; mu3 97.5% +12.3%; hand lam1 94.0% +3.2%. CHAT steering S=16 lam0.5 53.8->70.3% +2.0%, lam1 82.9% +9.6%; S=32 lam0.5 77.2->89.2% +0.9%.
+- 2026-11-04T16:33:04-08:00 122B download exit 0
+- 2026-11-04T16:41:06-08:00 Qwen per-token traces done (llama.cpp edx-trace)
+- 2026-11-04T16:43:14-08:00 Qwen analysis exit 0
+- 2026-11-04T16:43:45-08:00 QWEN per-token (llama.cpp edx-trace): LRU beats static profile at every size; S=64/256: profile 66.6 vs LRU 78.9 vs Belady 89.6 (coding). Go test 'profile >= LRU+10' FAILS (-12 to -28 pts).
+- 2026-11-04T17:09:04-08:00 BENCH122 done (NCPU=34)
+- 2026-11-04T18:21:43-08:00 bench35 done
+- 2026-11-04T18:23:12-08:00 bench35b stopped: another session (abode + playwright) put load avg at 21; timings invalid. Will rerun when quiet.
+- 2026-11-04T18:39:17-08:00 machine quiet; bench_spec
+- 2026-11-04T19:10:40-08:00 SPEC on Qwen3.6 (hybrid): accept 85-99% but 30-41 tok/s vs plain pinned 46-54: checkpoint restore per partial accept (7064 restores/run) kills it; k=6 hangs in llama.cpp checkpoint loop. Next: pure-attention Qwen3-Coder-30B-A3B.
+- 2026-11-04T19:11:57-08:00 Qwen3-Coder-30B download exit 0
+- 2026-11-04T19:18:36-08:00 machine quiet; bench35b
+- 2026-11-04T19:46:45-08:00 bench35b done
+- 2026-11-04T19:51:46-08:00 CODER: tracing
+- 2026-11-04T19:56:45-08:00 CODER: host experts 16740.00 MiB,  layers,  MiB/layer
+- 2026-11-04T20:04:45-08:00 CODER: placement bench done
+- 2026-11-04T20:04:46-08:00 CODER: all done
+- 2026-11-04T20:26:13-08:00 LIVE SWAP works: coding->chat expert set re-pinned mid-generation in 447 ms (44% experts kept in place), output coherent. Pin 781 ms. (Fixed: graph node budget for 48-layer models; diff re-pin; pageout opt-in EDX_PAGEOUT)
+- 2026-11-04T20:38:53-08:00 CODER: placement bench done
+- 2026-11-04T20:41:43-08:00 CODER: all done
+- 2026-11-04T20:50:23-08:00 hybrid bench done
+- 2026-11-04T20:50:44-08:00 HYBRID: 30% budget: 4 full layers+pinned 18.3 ms vs pinned-only 20.4 vs layers-only 21.2; 60%: 20 full+pinned 13.5 vs 16.3 vs 14.6. Hybrid best at both.
+- 2026-11-04T21:13:58-08:00 prompt-lineup bench done
+- 2026-11-04T21:21:10-08:00 spec devmap bench done
+- 2026-11-04T21:21:32-08:00 admission sim done
+- 2026-11-04T21:22:00-08:00 SPEC devmap: draft alone 162 tok/s, plain 39, spec 32-35 (verify batch ~3.3x single token: union of cold experts). ADMISSION sim: +5% simple rule, +8% oracle ceiling.
+- 2026-11-04T21:27:47-08:00 fast-lane ppl done
+- 2026-11-04T21:45:39-08:00 fast-lane ppl done
+- 2026-11-05T09:21:55-08:00 steer bench done

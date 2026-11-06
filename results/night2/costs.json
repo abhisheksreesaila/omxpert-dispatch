@@ -1,0 +1,28 @@
+{
+ "model": "Qwen3.6-35B-A3B UD-Q4_K_M",
+ "expert_MiB": 2.062,
+ "c_cpu_ms_per_expert": 0.0807,
+ "cpu_expert_GBps_eff": 26.8,
+ "sync_ms_per_cpu_layer": 0.0,
+ "sync_ms_raw_fit": -0.0488,
+ "gpu_base_ms_k8": 5.53,
+ "gpu_base_ms_k4": 5.62,
+ "per_cpu_layer_ms_k8": 0.5968,
+ "per_cpu_layer_ms_k4": 0.274,
+ "pcie_GBps_pageable_2MiB": 9.36,
+ "pcie_GBps_pinned_2MiB": 13.02,
+ "upload_ms_per_expert_pageable": 0.2311,
+ "admission_threshold_uses": 2.86,
+ "grid_means": {
+  "k4_n0": 5.66,
+  "k4_n10": 15.45,
+  "k4_n20": 11.24,
+  "k4_n30": 13.92,
+  "k4_n40": 16.91,
+  "k8_n0": 6.14,
+  "k8_n10": 11.57,
+  "k8_n20": 16.99,
+  "k8_n30": 23.04,
+  "k8_n40": 30.54
+ }
+}
