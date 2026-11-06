@@ -55,3 +55,21 @@ Low-rank residual per MoE block (rank 32, 2.1M params, base frozen), trained by 
 | 4/64 counted | 2791 | 9.2% | 9.6% | 10022 | 2.9% |
 | 4/64 learned set | 130.7 | 30.1% | 31.4% | 2240 | 7.9% |
 | 4/64 learned + adapter | 7.22 | **64.0%** | 71.3% | 76.1 | 33.5% |
+
+## CORRECTION (03:15): the 4-of-64 results above are invalid
+OLMoE picks 8 experts per token. With only 4 resident, the hard mask's top-8 still took 4 non-resident experts and gave them their full weight, so "S=4" ran 4 resident + 4 non-resident experts. S=8 and S=16 are unaffected (the resident set fills every slot). Fixed in all scripts: a chosen expert that isn't loaded gets weight 0 (Granite: softmax over loaded experts only). The site and README were corrected at once; S=4 is re-measured in round 5. Round 4 (co-optimisation) was at S=4 and is void too.
+
+## Round 5 (fixed mask)
+- OLMoE S=4 for real (unloaded slots weight 0): gate 4,527 → learned set 440 → + adapter **8.07** (top-1 62.3%, full 69.1%); counted set + adapter 8.25.
+- Granite 3.1 3B-A800M (40 experts, top-8; full coding ppl 4.909): S=16 gate 26.0 → search 20.0; S=8 81.7 → 38.2; S=4 2,943 → 380. Learned set beats counting on a second model family. Granite is far more sensitive than OLMoE (each of its 40 experts carries more).
+- Granite adapters crashed (profile shape read before the Granite set loaded); fixed, re-running.
+
+## gpt-oss-120b on the Mac: experts per layer (night3.log; exact 1,196 ms/token tonight, ppl 3.787)
+| per layer | λ=1 | λ=0.5 |
+|---|---|---|
+| 4 | 671 ms, 1.78×, +2.9% | 975 ms, 1.23×, +0.7% |
+| 8 | **488 ms, 2.45×, +5.4%** | 916 ms, 1.31×, +1.1% |
+| 16 | 474 ms, 2.53×, +8.7% | 889 ms, 1.35×, +2.7% |
+| 32 | 812 ms, 1.47×, +5.8% | 887 ms, **1.35×, +0.5%** |
+- Right vs wrong profile (coding work, 16/layer, λ=1): coding profile 474 ms, +8.7%; **chat profile 647 ms, +34.5%**. The wrong profile is slower and four times as costly.
+- Profiles from fewer tokens look more concentrated (top-16 coverage: 1k tokens 65.9%, 5k 57.7%, 25k 54.0%): small samples overfit.

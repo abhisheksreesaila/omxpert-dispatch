@@ -343,7 +343,7 @@ footer a { color: var(--acc); }
         <div class="sizes">
           <div><b>68.0%</b><span>16 of 64 + adapter</span></div>
           <div><b>66.2%</b><span>8 of 64 + adapter</span></div>
-          <div><b>…</b><span>4 of 64: re-measuring</span></div>
+          <div><b>62.3%</b><span>4 of 64 + adapter</span></div>
         </div>
       </div>
       <div class="steps3">
@@ -368,6 +368,8 @@ footer a { color: var(--acc); }
       <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 8 of 64 experts, next code token right</small></div><div class="n">48% → 58%</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 8 of 64 experts: 66.2% vs the full model's 69.1% (small model)</small></div><div class="n">66% vs 69%</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">On the 120B, the right profile matters<small>Coding work steered to the coding profile vs the chat profile (16 experts per layer, λ=1): 474 vs 647 ms/token</small></div><div class="n">+8.7% vs +34.5%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">How many experts the 120B needs<small>8 per layer at λ=1: 2.45× for +5.4%; 32 per layer at λ=0.5: 1.35× for +0.5%</small></div><div class="n">8 of 128</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">Gradient-learned expert gates<small>Relaxed gates never fully close; the strict set they pick collapses</small></div><div class="n">no</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">A learned bias per expert beats one dial<small>Learning which experts stay close helped a little</small></div><div class="n">no</div><span class="st p">Not yet</span></div>
       <div class="evr"><div class="c">Batching real jobs together<small>Random-token benchmark said 7.0 tok/s; real graded jobs: 4 at once 1.00 tok/s vs one at a time 1.36</small></div><div class="n">slower</div><span class="st x">Failed</span></div>
@@ -378,9 +380,10 @@ footer a { color: var(--acc); }
       <div class="rowc"><div class="lbl">Exact model<small>experts read from SSD</small></div><div class="track"><div class="fill base" data-v="1.04">1.04</div></div><div class="cost">ppl 3.787</div></div>
       <div class="rowc"><div class="lbl">Borrow, gentle<small>λ=0.5</small></div><div class="track"><div class="fill" data-v="1.51">1.51</div></div><div class="cost ok">+2.0% ppl</div></div>
       <div class="rowc"><div class="lbl">Borrow, firm<small>λ=1</small></div><div class="track"><div class="fill" data-v="2.96">2.96</div></div><div class="cost">+8.3% ppl</div></div>
+      <div class="rowc"><div class="lbl">8 experts per layer<small>λ=1, the sweet spot</small></div><div class="track"><div class="fill" data-v="2.05">2.05</div></div><div class="cost">+5.4% ppl</div></div>
       <div class="rowc"><div class="lbl">Borrow, too far<small>λ=2</small></div><div class="track"><div class="fill slow" data-v="6.76">6.76</div></div><div class="cost no">+86% · unusable</div></div>
     </div>
-    <p class="cap rv">gpt-oss-120b on a MacBook Pro (M4, 16 GB), tokens per second, one job. Perplexity on 4 × 512 tokens of held-out code: ±1–2% is noise.</p>
+    <p class="cap rv">gpt-oss-120b on a MacBook Pro (M4, 16 GB), tokens per second, one job (the 8-per-layer row was measured on Nov 6 against a 0.84 tok/s baseline that night: 2.45×). Perplexity on 4 × 512 tokens of held-out code: ±1–2% is noise.</p>
   </section>
 
   <section id="next">
