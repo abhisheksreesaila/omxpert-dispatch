@@ -329,26 +329,26 @@ footer a { color: var(--acc); }
 
   <section id="learned">
     <div class="eyebrow rv"><span class="rtag big">New · Nov 6</span> Learned, not counted</div>
-    <h2 class="rv">Keep 4 of 64 experts. <span class="acc">Still get 64% of your code right.</span></h2>
+    <h2 class="rv">Keep 8 of 64 experts. <span class="acc">Still get 66% of your code right.</span></h2>
     <p class="sub rv">Counting which experts fire is not enough at small sizes. Two learned steps fix it: <b>search</b> for the set that stays closest to the full model, then train a tiny <b>adapter</b> for that set. Routing never leaves the loaded experts.</p>
     <div class="lb">
       <div class="card rv" id="lbars">
-        <span class="k">Next token of your real code, guessed right · 4 of 64 experts per layer</span>
+        <span class="k">Next token of your real code, guessed right · 8 of 64 experts per layer</span>
         <div class="bars">
-          <div class="bar c"><div class="t"><span>Counted set<small>most-used experts</small></span><b>9.2%</b></div><div class="tr"><div class="fl" data-w="9.2"></div></div></div>
-          <div class="bar s"><div class="t"><span>Learned set<small>swap search, 16 min</small></span><b>30.1%</b></div><div class="tr"><div class="fl" data-w="30.1"></div></div></div>
-          <div class="bar a"><div class="t"><span>Learned set + adapter<small>2M parameters, 5 min</small></span><b>64.0%</b></div><div class="tr"><div class="fl" data-w="64.0"></div></div></div>
+          <div class="bar c"><div class="t"><span>Counted set<small>most-used experts</small></span><b>47.8%</b></div><div class="tr"><div class="fl" data-w="47.8"></div></div></div>
+          <div class="bar s"><div class="t"><span>Learned set<small>swap search, 24 min</small></span><b>57.9%</b></div><div class="tr"><div class="fl" data-w="57.9"></div></div></div>
+          <div class="bar a"><div class="t"><span>Learned set + adapter<small>2M parameters, 5 min</small></span><b>66.2%</b></div><div class="tr"><div class="fl" data-w="66.2"></div></div></div>
           <div class="bar f"><div class="t"><span>Full model<small>all 64 experts</small></span><b>69.1%</b></div><div class="tr"><div class="fl" data-w="69.1"></div></div></div>
         </div>
         <div class="sizes">
           <div><b>68.0%</b><span>16 of 64 + adapter</span></div>
           <div><b>66.2%</b><span>8 of 64 + adapter</span></div>
-          <div><b>64.0%</b><span>4 of 64 + adapter</span></div>
+          <div><b>…</b><span>4 of 64: re-measuring</span></div>
         </div>
       </div>
       <div class="steps3">
-        <div class="card rv"><span class="n">1 · COUNT</span><h3>Start from what fires</h3><p>The profile's most-used experts. Fine at 25% of the model, collapses below that: 9% right at 4 of 64.</p></div>
-        <div class="card rv"><span class="n">2 · SEARCH</span><h3>Learn the set</h3><p>Try swapping experts layer by layer; keep a swap only if the model gets closer to the full one on your text. 3× better at 4 of 64, and it carries over to chat.</p></div>
+        <div class="card rv"><span class="n">1 · COUNT</span><h3>Start from what fires</h3><p>The profile's most-used experts. Fine at 25% of the model, falls off below that: 48% right at 8 of 64, against 69% for the full model.</p></div>
+        <div class="card rv"><span class="n">2 · SEARCH</span><h3>Learn the set</h3><p>Try swapping experts layer by layer; keep a swap only if the model gets closer to the full one on your text. At 8 of 64 it halves the perplexity gap, and it carries over to chat.</p></div>
         <div class="card rv"><span class="n">3 · ADAPT</span><h3>Train a tiny correction</h3><p>A 2M-parameter adapter per profile, trained 5 minutes to imitate the full model. The set and its adapter ship together as one bundle.</p></div>
       </div>
     </div>
@@ -365,8 +365,8 @@ footer a { color: var(--acc); }
       <div class="evr"><div class="c">Placing predicted experts beats the default split<small>2×RTX 3090, exact output, vs llama.cpp's split by layer</small></div><div class="n">32% faster</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">120B on a 16 GB Mac, borrowing loaded neighbours<small>gpt-oss-120b, λ=1, +8.3% perplexity; λ=0.5: 1.46× for +2.0%</small></div><div class="n">1.04 → 2.96</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">Your experts drift<small>Share of the coding hot set that changed within weeks: re-profile</small></div><div class="n">25–28%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 4 of 64 experts, next code token right</small></div><div class="n">9% → 30%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 4 of 64 experts: 64.0% vs the full model's 69.1% (small model)</small></div><div class="n">64% vs 69%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 8 of 64 experts, next code token right</small></div><div class="n">48% → 58%</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 8 of 64 experts: 66.2% vs the full model's 69.1% (small model)</small></div><div class="n">66% vs 69%</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Supported</span></div>
       <div class="evr"><div class="c">Gradient-learned expert gates<small>Relaxed gates never fully close; the strict set they pick collapses</small></div><div class="n">no</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">A learned bias per expert beats one dial<small>Learning which experts stay close helped a little</small></div><div class="n">no</div><span class="st p">Not yet</span></div>

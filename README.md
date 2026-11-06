@@ -32,10 +32,11 @@ On a small MoE (OLMoE-1B-7B, 64 experts, 8 per token), routing strictly to a few
 |---|---|---|---|---|
 | 16 of 64 | 64.7% next token right | 65.7% | **68.0%** | 69.1% |
 | 8 of 64 | 47.8% | 57.9% | **66.2%** | 69.1% |
-| 4 of 64 | 9.2% | 30.1% | **64.0%** | 69.1% |
+| 4 of 64 | re-measuring (see correction) | | | |
 
 - **Learned set:** start from the most-used experts and try swaps layer by layer; keep a swap only if the model gets closer to the full model (KL) on training text. Gradient-learned gates and first-order importance both failed (logged).
 - **Adapter:** a low-rank residual per MoE block, trained by distillation against the full model. Set + adapter = one bundle per profile; the matching bundle wins on its own kind of work.
+- **Correction (03:15):** the first 4-of-64 numbers were wrong. The model picks 8 experts per token, so with only 4 loaded the strict mask still filled 4 slots with unloaded experts at full weight. 8 and 16 of 64 are unaffected. Re-measuring 4 of 64 with the unloaded slots dropped.
 - Caveats: one small model; the bundle agrees with the full model's top guess 71–82% of the time; the adapter also lowers perplexity on its own (unexplained, see `docs/logs/NIGHT3_LOG.md`). Not yet on the 120B.
 - gpt-oss-120b on the 16 GB Mac (steered, real graded coding tasks): 7/8 and 8/8 tests passed; running 4 real jobs at once was slower than one at a time.
 
