@@ -26,6 +26,25 @@ Everyone already offloads experts to RAM and SSD and caches them reactively. The
 4. **Re-profile** when your work shifts (this week Python, the weekend Mojo). Same model, new expert set. No quantization, no retraining.
 5. When a rare token wants an expert that isn't loaded, **borrow a loaded neighbour** (a small router nudge, λ) instead of waiting on the SSD.
 
+## New (2026-11-07): Qwen 4's architecture on a desktop, faster than stock
+
+Qwen3.8-Flash-Next (Qwen 4 preview architecture: 125B MoE + 51B n-gram table, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM.
+Three sets of tricks in one engine: **your profile** (from your own chat history) picks the VRAM experts, **0xSero's exclusive
+tiers** keep each expert in VRAM or RAM but never both, and **FreeToken's CPU-while-GPU** hybrid, ported into llama.cpp's scheduler.
+
+| Your held-out chat prompts (2 interleaved server pairs) | Decode tok/s | Prompt tok/s |
+|---|---|---|
+| FreeToken as is (its 64 GB mode) | 1.4 | 17 |
+| Stock llama.cpp (its own fit) | 17.7 / 15.7 | 108 / 83 |
+| **Combined stack** (`STACK=pinned omxpert/run.sh`) | **22.2 / 21.1** | **218 / 202** |
+
+- **The profile is personal:** 30% of the experts serve 79% of picks in new conversations (ceiling 83%); someone else's coding profile serves 44%. 2,000 tokens of history are enough. Learn yours with `omxpert/profile.sh` (counts only, no text kept).
+- **Night 5's "pinning doesn't pay" was a bug:** prompt batches re-read GPU 1's pinned experts from disk (3,148 page faults per token). `EDX_XDEV` + `EDX_PREFILL_LOCAL` took it to 48.
+- **Small or no gain:** CPU-while-GPU (`EDX_OVERLAP`) +2–5% (the profile already puts ~94% of picks on the GPUs); MTP and layer-ahead prefetch none on the pinned stack.
+- **Costs:** on text unlike your profile it was slower than stock (coding prompts with a chat profile: 10.0 vs 14.9 tok/s; steering λ0.5 recovers 16.9). Not bit-exact: greedy word match with stock 0.49, vs 0.35 for FreeToken on the same model. A pass@1 coding test is next. First request after start is slow (2.7 tok/s) while RAM fills.
+- Night 5 (same box, exact stack `-lzm off` + MTP): 21–25 tok/s bit-exact; the CPU's expert math is the bottleneck (32 of 49 ms).
+- Details: [`docs/logs/report_night6.md`](docs/logs/report_night6.md), [before/after page](docs/night6_before_after.html), [journey Day 6](docs/JOURNEY.md). **Next:** the expert layer in Mojo.
+
 ## New (2026-11-06): learned expert sets and adapters
 
 On a small MoE (OLMoE-1B-7B, 64 experts, 8 per token), routing strictly to a few loaded experts per layer, scored on held-out coding text:
