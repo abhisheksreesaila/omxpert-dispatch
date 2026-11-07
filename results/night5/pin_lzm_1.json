@@ -1,0 +1,44 @@
+{
+ "name": "pin_lzm_1",
+ "args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off",
+ "edxenv": "EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1",
+ "avail_ram_gb_start": 45.7,
+ "free_vram_start": [
+  24069,
+  22015
+ ],
+ "load_s": 165.1,
+ "warmup_tok_s": [
+  11.09,
+  17.9,
+  19.92,
+  8.1,
+  19.36,
+  18.99
+ ],
+ "decode_tok_s": [
+  14.55,
+  22.75,
+  20.28
+ ],
+ "prefill_tok_s": [
+  12.1,
+  32.5,
+  38.9
+ ],
+ "tok_s": 20.28,
+ "prefill_tok_s_median": 32.5,
+ "majflt_per_token": 908.4,
+ "ssd_MB_per_token_est": 3.72,
+ "texts": [
+  ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction project(id: string, environmentId: EnvironmentId): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    members: [member(id, environmentId)],\n  };\n}\n\nfunction search(\n  overrides: Partial<SettingsScopeSearch> & { selectedEnvironmentId: SettingsScopeSearch[\"selectedEnvironmentId\"] },\n): SettingsScopeSearch {\n  re",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(second, url, signal());\n    await cache.resolve(third, url, signal());\n    expect(records.size).toBe(2);\n    expect(cache.estimate()).toBeLessThanOrEqual(PROJECT_FA"
+ ],
+ "rss_gb": 45.2,
+ "used_vram_mib": [
+  22553,
+  22015
+ ],
+ "avail_ram_gb_end": 43.2
+}

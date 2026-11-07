@@ -1,0 +1,44 @@
+{
+ "name": "pin_steer1",
+ "args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360",
+ "edxenv": "EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=1",
+ "avail_ram_gb_start": 43.2,
+ "free_vram_start": [
+  24069,
+  21690
+ ],
+ "load_s": 135.6,
+ "warmup_tok_s": [
+  21.05,
+  27.27,
+  18.87,
+  17.12,
+  24.95,
+  25.03
+ ],
+ "decode_tok_s": [
+  25.19,
+  26.56,
+  22.8
+ ],
+ "prefill_tok_s": [
+  26.2,
+  40.0,
+  29.3
+ ],
+ "tok_s": 25.19,
+ "prefill_tok_s_median": 29.3,
+ "majflt_per_token": 11.4,
+ "ssd_MB_per_token_est": 0.05,
+ "texts": [
+  ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction project(id: string, environmentId: EnvironmentId): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    members: [member(id, environmentId)],\n  };\n}\n\nconst projects = [project(\"alpha\", laptopId), project(\"beta\", serverId)];\n\ndescribe(\"resolveSettingsScope\", () => {\n  it(\"resolves the first project when the reque",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    await cache.resolve(second, url, signal());\n    expect(records.size).toBe(1);\n\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(third, url, signal());\n    expect(records.size).toBe(1);\n    expect(cache.peek(se"
+ ],
+ "rss_gb": 44.0,
+ "used_vram_mib": [
+  22503,
+  21961
+ ],
+ "avail_ram_gb_end": 42.4
+}

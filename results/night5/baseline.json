@@ -1,0 +1,19 @@
+{
+ "model": "Qwen3.8-Flash-Next UD-Q4_K_XL (qwen4exp), 111 GB incl. 28.8 GB IQ4_NL n-gram table",
+ "box": "2x RTX 3090 (NVLink), Ryzen 5900X 12C, 62 GB RAM (~35 GB free), Samsung 990 PRO on btrfs/dm-crypt",
+ "config": "stock llama-server, llama.cpp's own fit over both GPUs, mmap, lazy n-gram table (defaults)",
+ "decode_tok_s": 11.04,
+ "decode_runs": [
+  10.55,
+  11.04,
+  13.11
+ ],
+ "prefill_tok_s": 27.6,
+ "ram_used_gb": 37.5,
+ "majflt_per_token": 484.7,
+ "vram_used_mib": [
+  22835,
+  22902
+ ],
+ "kl_reference": "results/night5/kl_base.bin (this config's logits on 4,096 held-out coding tokens)"
+}

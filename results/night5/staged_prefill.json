@@ -1,0 +1,41 @@
+{
+ "name": "staged_prefill",
+ "args": "-ub 2048 -b 2048",
+ "edxenv": "",
+ "avail_ram_gb_start": 41.2,
+ "free_vram_start": [
+  24069,
+  21691
+ ],
+ "load_s": 165.2,
+ "warmup_tok_s": [
+  12.06,
+  16.28,
+  15.33
+ ],
+ "decode_tok_s": [
+  14.76,
+  17.3,
+  17.8
+ ],
+ "prefill_tok_s": [
+  21.4,
+  34.2,
+  53.5
+ ],
+ "tok_s": 17.3,
+ "prefill_tok_s_median": 34.2,
+ "majflt_per_token": 513.1,
+ "ssd_MB_per_token_est": 2.1,
+ "texts": [
+  "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.lengt"
+ ],
+ "rss_gb": 39.9,
+ "used_vram_mib": [
+  23035,
+  23037
+ ],
+ "avail_ram_gb_end": 40.6
+}

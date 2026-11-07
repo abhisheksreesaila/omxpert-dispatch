@@ -1,0 +1,41 @@
+{
+ "name": "pin_nopageout",
+ "args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35359",
+ "edxenv": "EDX_PIN=results/night5/pins/q38_coding.bin",
+ "avail_ram_gb_start": 45.2,
+ "free_vram_start": [
+  24069,
+  21690
+ ],
+ "load_s": 117.1,
+ "warmup_tok_s": [
+  13.79,
+  19.29,
+  19.27
+ ],
+ "decode_tok_s": [
+  12.4,
+  23.43,
+  21.11
+ ],
+ "prefill_tok_s": [
+  13.1,
+  28.0,
+  41.7
+ ],
+ "tok_s": 21.11,
+ "prefill_tok_s_median": 28.0,
+ "majflt_per_token": 917.6,
+ "ssd_MB_per_token_est": 3.76,
+ "texts": [
+  "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction project(id: string, environmentId: EnvironmentId): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    members: [member(id, environmentId)],\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {\n    environmentId: null,\n    projectId: null,\n    providerInstanceI",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(second, url, signal());\n    await cache.resolve(third, url, signal());\n    expect(records.size).toBe(2);\n    expect(cache.estimate()).toBeLessThanOrEqual(PROJECT_FA"
+ ],
+ "rss_gb": 47.4,
+ "used_vram_mib": [
+  22499,
+  21953
+ ],
+ "avail_ram_gb_end": 43.8
+}

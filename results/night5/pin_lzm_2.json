@@ -1,0 +1,11 @@
+{
+ "name": "pin_lzm_2",
+ "args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off",
+ "edxenv": "EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1",
+ "avail_ram_gb_start": 44.3,
+ "free_vram_start": [
+  24069,
+  21846
+ ],
+ "load_s": 228.1
+}

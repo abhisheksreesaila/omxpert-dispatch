@@ -1,0 +1,41 @@
+{
+ "name": "base2",
+ "args": "",
+ "edxenv": "",
+ "avail_ram_gb_start": 45.3,
+ "free_vram_start": [
+  24069,
+  21690
+ ],
+ "load_s": 102.1,
+ "warmup_tok_s": [
+  14.64,
+  21.64,
+  22.74
+ ],
+ "decode_tok_s": [
+  22.98,
+  22.64,
+  23.59
+ ],
+ "prefill_tok_s": [
+  138.0,
+  172.1,
+  175.3
+ ],
+ "tok_s": 22.98,
+ "prefill_tok_s_median": 172.1,
+ "majflt_per_token": 2.0,
+ "ssd_MB_per_token_est": 0.01,
+ "texts": [
+  "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"brand.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    for (let index = 0; index < 64; index += 1) {\n      await cache.resolve(\n        { ...target, cwd: `/workspace/${index}` },\n        `https://example.test/${index}`,\n        signal(),\n"
+ ],
+ "rss_gb": 45.3,
+ "used_vram_mib": [
+  22775,
+  23057
+ ],
+ "avail_ram_gb_end": 44.6
+}

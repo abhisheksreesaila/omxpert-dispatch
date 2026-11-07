@@ -1,0 +1,44 @@
+{
+ "name": "pf_same",
+ "args": "",
+ "edxenv": "EDX_PF_MODE=same",
+ "avail_ram_gb_start": 42.1,
+ "free_vram_start": [
+  23551,
+  21548
+ ],
+ "load_s": 117.1,
+ "warmup_tok_s": [
+  5.96,
+  16.43,
+  14.4,
+  11.82,
+  12.59
+ ],
+ "decode_tok_s": [
+  11.2,
+  10.79,
+  10.39
+ ],
+ "prefill_tok_s": [
+  36.5,
+  51.0,
+  66.1
+ ],
+ "tok_s": 10.79,
+ "prefill_tok_s_median": 51.0,
+ "majflt_per_token": 261.4,
+ "ssd_MB_per_token_est": 1.07,
+ "texts": [
+  "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceCount: 0,\n    providerInstanceSummaries: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> =",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"brand.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    for (let index = 0; index < 64; index += 1) {\n      await cache.resolve(\n        { ...target, cwd: `/workspace/${index}` },\n        `https://example.test/${index}`,\n        signal(),\n"
+ ],
+ "rss_gb": 37.3,
+ "used_vram_mib": [
+  22087,
+  22547
+ ],
+ "avail_ram_gb_end": 35.2,
+ "edx_pf": "EDX_PF mode=2 ops=42103 picked_pages=112839200 resident_at_use=0.9908 prefetch_jobs=290520"
+}

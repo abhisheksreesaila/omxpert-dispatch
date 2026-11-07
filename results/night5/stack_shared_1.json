@@ -1,0 +1,10 @@
+{
+ "name": "stack_shared_1",
+ "args": "-lzm off -fitt 3600,1024 -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 -devd CUDA0 -ngld all",
+ "edxenv": "",
+ "avail_ram_gb_start": 46.2,
+ "free_vram_start": [
+  24069,
+  21690
+ ]
+}

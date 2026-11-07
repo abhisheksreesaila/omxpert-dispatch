@@ -1,0 +1,279 @@
+{
+ "baseline": {
+  "decode_tok_s": 11.04,
+  "prefill_tok_s": 27.6
+ },
+ "tricks": {
+  "staged_prefill": {
+   "status": "measured",
+   "run": "staged_prefill",
+   "decode_tok_s": 17.3,
+   "decode_runs": [
+    14.76,
+    17.3,
+    17.8
+   ],
+   "prefill_tok_s": 34.2,
+   "majflt_per_token": 513.1,
+   "rss_gb": 39.9,
+   "what": "prompt in 2048-token batches: each CPU layer's experts stream to the GPU once per 2048 tokens, not per 512",
+   "kl": {
+    "kl": 0.026097,
+    "same_top_pct": 93.186
+   }
+  },
+  "exclusive_tiers": {
+   "status": "measured",
+   "run": "pin",
+   "decode_tok_s": 13.38,
+   "decode_runs": [
+    8.96,
+    14.22,
+    13.38
+   ],
+   "prefill_tok_s": 23.4,
+   "majflt_per_token": 48.2,
+   "rss_gb": 38.8,
+   "what": "experts pinned in VRAM have their RAM pages given back (EDX_PAGEOUT), so RAM only holds experts that are not on a GPU",
+   "compare_to": {
+    "status": "measured",
+    "run": "pin_nopageout",
+    "decode_tok_s": 21.11,
+    "decode_runs": [
+     12.4,
+     23.43,
+     21.11
+    ],
+    "prefill_tok_s": 28.0,
+    "majflt_per_token": 917.6,
+    "rss_gb": 47.4
+   }
+  },
+  "cpu_lane_overlap": {
+   "status": "not_built",
+   "reason": "engine-level: llama.cpp's scheduler runs a layer's GPU part and CPU part one after another and syncs with the host between splits; running the CPU's experts while the GPU works needs a split that runs both at once (an engine change, weeks). Costed in leverage.json."
+  },
+  "read_pool": {
+   "status": "measured",
+   "run": "pf_same",
+   "decode_tok_s": 10.79,
+   "decode_runs": [
+    11.2,
+    10.79,
+    10.39
+   ],
+   "prefill_tok_s": 51.0,
+   "majflt_per_token": 261.4,
+   "edx_pf": "EDX_PF mode=2 ops=42103 picked_pages=112839200 resident_at_use=0.9908 prefetch_jobs=290520",
+   "rss_gb": 37.3,
+   "what": "8 reader threads fetch the picked experts' other matrices (up/down) while the first one computes",
+   "ab_vs_off": {
+    "median_tok_s": 26.58,
+    "runs": [
+     23.68,
+     26.16,
+     28.29,
+     24.9,
+     26.87,
+     26.75,
+     26.58
+    ],
+    "majflt_per_tok": 6.5,
+    "cpu_expert_ms_per_tok": 27.71,
+    "ram_hit": 0.9999,
+    "vs_off": 1.028,
+    "paired_ratios": [
+     1.02,
+     1.105,
+     1.109,
+     0.915,
+     1.01,
+     1.034,
+     0.988
+    ]
+   },
+   "ab_off": {
+    "median_tok_s": 25.86,
+    "runs": [
+     23.22,
+     23.68,
+     25.51,
+     27.2,
+     26.6,
+     25.86,
+     26.89
+    ],
+    "majflt_per_tok": 9.9,
+    "cpu_expert_ms_per_tok": 27.46,
+    "ram_hit": 0.9999,
+    "vs_off": 1.0,
+    "paired_ratios": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "ab_note": "in-process A/B, all arms with MTP drafting on (the per-request switch was ignored in that run)"
+  },
+  "layer_ahead_prefetch": {
+   "status": "measured",
+   "run": "pf_prev",
+   "what": "read pool + next layer's experts guessed from the previous token's picks (his trick guesses with the next router; ours below)",
+   "learned_variant": {
+    "status": "missing_run",
+    "run": "pf_markov"
+   },
+   "combined": {
+    "status": "missing_run",
+    "run": "pf_both"
+   },
+   "his_router_variant": "not built: needs the router input at run time inside the CPU path; offline recall of our guessers in predictor_offline.json",
+   "ab_vs_off": {
+    "median_tok_s": 26.24,
+    "runs": [
+     25.64,
+     28.97,
+     26.24,
+     24.94,
+     25.69,
+     27.75,
+     26.28
+    ],
+    "majflt_per_tok": 5.4,
+    "cpu_expert_ms_per_tok": 27.32,
+    "ram_hit": 1.0,
+    "vs_off": 1.015,
+    "paired_ratios": [
+     1.104,
+     1.223,
+     1.029,
+     0.917,
+     0.966,
+     1.073,
+     0.977
+    ]
+   },
+   "ab_off": {
+    "median_tok_s": 25.86,
+    "runs": [
+     23.22,
+     23.68,
+     25.51,
+     27.2,
+     26.6,
+     25.86,
+     26.89
+    ],
+    "majflt_per_tok": 9.9,
+    "cpu_expert_ms_per_tok": 27.46,
+    "ram_hit": 0.9999,
+    "vs_off": 1.0,
+    "paired_ratios": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "ab_note": "in-process A/B, all arms with MTP drafting on (the per-request switch was ignored in that run)"
+  },
+  "no_host_sync": {
+   "status": "not_built",
+   "reason": "engine-level: llama.cpp's scheduler runs a layer's GPU part and CPU part one after another and syncs with the host between splits; removing the per-layer sync means GPU kernels that poll for experts landing (mapped flags), i.e. replacing ggml's scheduler for MoE layers."
+  },
+  "mtp": {
+   "status": "measured",
+   "run": "mtp",
+   "decode_tok_s": 19.78,
+   "decode_runs": [
+    17.84,
+    19.78,
+    20.86
+   ],
+   "prefill_tok_s": 31.0,
+   "majflt_per_token": 481.8,
+   "draft_accept": 0.916,
+   "rss_gb": 39.3,
+   "what": "Qwen's own 1-layer draft head guesses 2 tokens ahead, the full model checks them in one pass (exact)",
+   "ab": {
+    "off": {
+     "median_tok_s": 20.26,
+     "runs": [
+      20.37,
+      21.11,
+      19.96,
+      20.99,
+      19.63,
+      20.15,
+      19.92,
+      20.67
+     ],
+     "majflt_per_tok": 22.9,
+     "cpu_expert_ms_per_tok": 31.88,
+     "ram_hit": 0.9997,
+     "vs_off": 1.0,
+     "paired_ratios": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "off+mtp": {
+     "median_tok_s": 27.56,
+     "runs": [
+      27.46,
+      26.26,
+      27.82,
+      29.32,
+      26.92,
+      26.42,
+      27.66,
+      27.81
+     ],
+     "majflt_per_tok": 24.8,
+     "cpu_expert_ms_per_tok": 26.34,
+     "ram_hit": 0.9998,
+     "draft_accept": 0.863,
+     "vs_off": 1.36,
+     "paired_ratios": [
+      1.348,
+      1.244,
+      1.394,
+      1.397,
+      1.371,
+      1.311,
+      1.389,
+      1.345
+     ]
+    }
+   }
+  },
+  "engram_ssd": {
+   "status": "measured",
+   "run": "engram_in_ram",
+   "decode_tok_s": 18.69,
+   "decode_runs": [
+    20.53,
+    14.8,
+    18.69
+   ],
+   "prefill_tok_s": 116.1,
+   "majflt_per_token": 11.0,
+   "rss_gb": 37.9,
+   "what": "the 28.8 GB n-gram table loaded into RAM (-lzm off) vs read row by row from the SSD (stock default, the baseline)",
+   "note": "stock llama.cpp already keeps tables > 4 GiB on disk and reads the ~16 rows a token needs"
+  }
+ }
+}

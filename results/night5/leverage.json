@@ -1,0 +1,117 @@
+{
+ "measured": {
+  "total_ms": 49.4,
+  "cpu_expert_ms": 31.88,
+  "other_ms": 17.5,
+  "cpu_layers": 24,
+  "ms_per_cpu_layer": 1.33,
+  "off_tok_s": 20.26,
+  "mtp_tok_s": 27.56,
+  "mtp_gain": 1.36,
+  "ram_hit_off": 0.9997,
+  "handoff_ms": 0.0,
+  "handoff_runs": {
+   "alternating": [
+    23.14,
+    20.79,
+    22.1
+   ],
+   "contiguous": [
+    17.5,
+    21.93
+   ]
+  }
+ },
+ "check": {
+  "config": "25 CPU layers, -lzm off, no MTP, separate processes (handoff_contig2)",
+  "pred_tok_s": 19.7,
+  "meas_tok_s": 19.71,
+  "meas_runs": [
+   17.5,
+   21.93
+  ],
+  "err": -0.001,
+  "fitted": false
+ },
+ "profile_miss": {
+  "pred_tok_s": 43.0,
+  "meas_tok_s": [
+   20.28
+  ],
+  "fit_tok_s": [
+   22.1,
+   21.14
+  ],
+  "note": "CPU time does not scale with CPU picks in llama.cpp's pinned mode; until that cost is found, the 'engine' rows are optimistic"
+ },
+ "whatif": {
+  "now": {
+   "label": "This box, llama.cpp fit, page-cache table (no MTP)",
+   "decode_tok_s": 20.3,
+   "why": "measured split: half of the 480 expert picks per token on the CPU"
+  },
+  "now_mtp": {
+   "label": "Same + MTP drafting (measured)",
+   "decode_tok_s": 27.6,
+   "why": "MTP multiplies decode by 1.36 in the paired A/B"
+  },
+  "profile_llamacpp": {
+   "label": "Software: profile picks VRAM experts, inside llama.cpp (MEASURED)",
+   "decode_tok_s": 20.3,
+   "why": "measured [20.28] vs llama.cpp fit [22.1, 21.14] (same flags, interleaved); the model predicted 43.0: llama.cpp's pinned path costs something this model does not see"
+  },
+  "profile_engine": {
+   "label": "Software: profile + his engine (overlap, no per-layer sync), ESTIMATE, optimistic",
+   "decode_tok_s": 57.2,
+   "why": "the CPU's few cold picks run while the GPU works; no hand-off stalls"
+  },
+  "overlap": {
+   "label": "Software: CPU works while the GPU works (engine change only)",
+   "decode_tok_s": 31.4,
+   "why": "time = max(CPU, GPU) instead of their sum"
+  },
+  "second_nvme": {
+   "label": "Second NVMe (RAID0)",
+   "decode_tok_s": 20.3,
+   "prefill": "faster model load (111 GB) and cold starts",
+   "why": "no decode gain: 99.97% of expert pages are already in RAM once the table goes through the page cache"
+  },
+  "ram_128gb": {
+   "label": "128 GB RAM (+64 GB DDR4, 4 slots)",
+   "decode_tok_s": 20.3,
+   "prefill": "no SSD at all; room for the lossless 102 GB n-gram table or 8-bit experts",
+   "why": "decode is CPU-bound, not RAM-bound; RAM buys quality headroom (lossless table, Q8 experts) and a second model, not speed"
+  },
+  "egpu": {
+   "label": "eGPU 24 GB + your profile, ESTIMATE (needs the engine)",
+   "decode_tok_s": 53.7,
+   "why": "79% of experts in VRAM serve 98% of coding picks; hidden states cross the x4 link (~10 KB per hop)"
+  },
+  "egpu_layers": {
+   "label": "eGPU as 7 more whole layers (works in llama.cpp today)",
+   "decode_tok_s": 25.0,
+   "why": "llama.cpp layer split, 17 CPU layers left"
+  },
+  "cpu_16core": {
+   "label": "16-core CPU (5950X drop-in)",
+   "decode_tok_s": 24.2,
+   "why": "upper bound: assumes the CPU expert math scales with cores; it is partly RAM-bandwidth bound"
+  },
+  "npu": {
+   "label": "NPU",
+   "decode_tok_s": "no gain",
+   "why": "this desktop has none; an NPU sharing the same DDR4 reads experts no faster than the CPU (memory-bound); a separate NPU box is a network hop like the Mac"
+  },
+  "mac": {
+   "label": "M4 Mac (16 GB) over Tailscale",
+   "decode_tok_s": "background lane only",
+   "why": "measured round trip 53 ms average (7.6-302 ms): one hop costs more than a whole token here; give it its own jobs instead"
+  },
+  "dream": {
+   "label": "Profile + engine + eGPU + MTP, ESTIMATE, optimistic",
+   "decode_tok_s": 77.8,
+   "why": "GPU-bound: what is left is the GPUs' own time"
+  }
+ },
+ "note": "decode estimates built from measured components (MTP-off arm unless marked); 'profile_engine', 'overlap' and 'dream' need an engine that does not exist yet"
+}

@@ -1,0 +1,96 @@
+# Night 5 journal
+
+- 15:50 download: hf --include with several values took the extra values as filenames; fixed with repeated --include.
+- 15:53 xet stalled at ~250 KB/s ("connection struggling"); plain HTTPS measured 114 MB/s; restarted with xet off.
+- llama.cpp tree (bbb02c9, Nov 4) already has qwen4exp, MTP drafting (--spec-type draft-mtp) and lazy on-demand reads of the engram table (-lzm auto: tables > 4 GiB stay on disk, rows read on demand). So engram-on-SSD is already stock.
+- 16:06 download done (108 GiB); queue 1 started
+- 16:06 run base ( | )
+- 16:21 KL base saved
+- 16:22 M1 PASS: baseline 11.04 tok/s decode (runs 10.6/11.0/13.1), prompt 27.6 tok/s, ~485 major faults/token, RSS 37.5 GB; KL reference PPL 3.56 (8×512 coding tokens)
+- 16:34 traces: coding_train (28390, 48, 10) coding_heldout (12810, 48, 10) 
+- 16:35 traces: coding_train 28,390 tok, coding_heldout done. Held-out hit rate of a per-expert coding profile (Qwen3.8, 512 experts): 10% resident → 51.9%, 20% → 69.7%, 30% → 80.0%, 45% → 89.0%, 56% → 93.2% (122B: 45% → 78%, 56% → 84%). Whole layers give hit = resident share. Qwen 4's finer experts concentrate more.
+- 16:35 run pf_stats ( | EDX_PF_MODE=stats)
+- 16:36 learned next-layer guesser (offline, 3k held-out tokens, recall of layer l+1's 10 picks): N=16 guesses: static profile 26%, previous token 36%, learned table 51.5%, table+previous 55.8%; N=32: 41/36/68/72%.
+- 16:43 run pf_same ( | EDX_PF_MODE=same)
+- 16:45 D-05: pf_stats (measure only) gave 17.9 tok/s vs base 11.0 with no change in work: run-to-run drift dominates. 98.8% of decode expert pages were already in RAM at use. Decode tricks moved to an in-process A/B (night5_ab.py: one server, 7 arms x 7 rounds, Latin square); prefetch reads now madvise(WILLNEED) (large kernel reads) instead of 4 KiB touches; separate pf_prev/markov/both runs skipped (pf_same was already running, kept).
+- 16:52 run mtp (-md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 | )
+- 17:03 run engram_in_ram (-lzm off | )
+- 17:03 mtp (separate run): 19.78 tok/s (17.84/19.78/20.86), draft acceptance 91.6% over 227 drafts, prompt 31.0. Unlike idea 42 (Mac, SSD-bound), here decode is RAM/CPU-bound (98.8% resident) and checking 3 tokens costs about one token's expert reads. Confirm in pf_ab.
+- 17:07 queue1 done
+- 17:07 run staged_prefill (-ub 2048 -b 2048 | )
+- 17:08 engram_in_ram (-lzm off): prompt 116 tok/s (108.8/124.2/116.1) vs base 27.6, decode 18.69, majflt 11/token vs 485, RSS 37.9 GB (no extra RAM: the table is still mmap'd, the OS pages in what is used). Cause: stock lazy mode puts MADV_RANDOM on the table range and skips the normal mapping path; ~485 faults/token. D-06: pf_ab runs with -lzm off; stack picker adds it if it beats both baselines' prompt speed by 1.5x.
+- 17:18 KL staged_prefill: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.026097 ± 0.001493 Same top p: 93.186 ± 0.558 % 
+- 17:18 run pin (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360 | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1)
+- 17:18 staged_prefill (lazy table): prompt 34.2 (21.4/34.2/53.5), decode 17.3; KL to base 0.0261, same top token 93.2%: batch shape alone changes kernels and flips expert picks. Queue 4 measures the KL noise floor (base repeated, ub 256, ub 8, -lzm off).
+- 17:27 run pin_staged (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360 -ub 2048 -b 2048 | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1)
+- 17:28 pin (coding profile per expert, 35,360 MiB budget ≈ 12k experts ≈ 49% resident, expected ~90% VRAM hits): decode 13.38 (8.96/14.22/13.38), prompt 23.4, majflt 48/token. Not the ~2x the hit rate implies. Hypothesis: per-expert residency makes EVERY layer a GPU→CPU→GPU hand-off (~96 per token) vs ~2 for llama.cpp's contiguous layer split; each hand-off is a host sync + thread wake. That is exactly what his 'CPU lane overlapped' + 'no per-layer host sync' remove: our learned residency needs his engine mechanics to pay.
+- 17:37 run pin_steer05 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360 | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=0.5)
+- 17:44 run pin_steer1 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360 | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=1)
+- 17:57 KL pin_ub8: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.026719 ± 0.001622 Same top p: 93.971 ± 0.527 % 
+- 18:01 KL pin_steer05: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.074398 ± 0.005653 Same top p: 90.980 ± 0.634 % 
+- 18:04 KL pin_steer1: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.105389 ± 0.007137 Same top p: 89.559 ± 0.677 % 
+- 18:04 queue2 done
+- 18:05 run pf_ab (in-process A/B, 7 arms x 7 rounds)
+- 18:05 queue 2 summary: pin_staged 13.57 / prompt 24.3 (staged batches don't fix pinned-mode prompts). Steering: λ0.5 22.88 tok/s (23.47/22.88/21.70), KL 0.0744, same top 91.0%; λ1 25.19 (25.19/26.56/22.80), KL 0.1054, same top 89.6%. Floor (pin, no steer, ub8) KL 0.0267, same top 94.0%. Steering ~2x decode for ~+0.05-0.08 KL above the floor.
+- 18:17 run mtp_ab (in-process A/B, MTP on/off, 8 paired rounds)
+- 18:18 pf_ab (one server, -lzm off, MTP on in every arm by mistake, 7x7): off 25.86 tok/s; same 26.58 (+2.8%, 5/7 paired wins), prev 26.24 (+1.5%), markov 26.29 (+1.7%), both 26.08 (+0.9%). RAM hit at use 99.99%, ~10 faults/token: with the table through the page cache nothing misses RAM, so prefetch has nothing to hide. CPU expert op = 27.5 ms of a 38.7 ms token (71%). The bottleneck on this box is the CPU's expert math, not I/O. Prefetch kept as a measured no-gain; the lever is moving expert work off the CPU (residency+engine, steering, eGPU) or overlapping it.
+- 18:23 run pin_nopageout (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35359 | EDX_PIN=results/night5/pins/q38_coding.bin)
+- 18:23 mtp_ab invalid (server ignores per-request speculative fields: they sit under #if 0 in server-schema.cpp); enabled speculative.n_max only, rebuilt, mtp_ab reruns after pin_nopageout. Old file kept as mtp_ab_invalid.json (both arms drafted: 25.88 vs 27.11 = run-order noise ~5%).
+- 18:24 position effect: in mtp_ab_invalid both arms were identical yet the second arm of each round won 8/8 (+4.8% median). pf_ab ran 'off' first every round, so its +1-3% 'wins' for prefetch are within this order effect: prefetch = no measurable gain. night5_ab now alternates arm order by round.
+- 18:29 run mtp_ab (in-process A/B, MTP on/off, 8 paired rounds)
+- 18:34 run base2 ( | )
+- 18:35 mtp_ab (fixed: speculative.n_max per request, order alternated, 8 paired rounds, -lzm off): off 20.26 tok/s (19.63-21.11), MTP 27.56 (26.26-29.32), x1.36, 8/8 paired wins, 86.3% drafts accepted. MTP off: CPU expert op 31.9 ms of a 49.4 ms token (65%). pin_nopageout (separate run): decode 21.11 [12.4, 23.43, 21.11].
+- 18:37 run staged_lzm (-lzm off -ub 2048 -b 2048 | )
+- 18:41 stack picked: [mtp] args=[-md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2] env=[]
+- 18:41 run stack (-md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 | )
+- 18:42 base2 (stock, run 18:34 after many -lzm off runs): decode 22.98 (22.98/22.64/23.59), prompt 172 (138/172/175) vs base 11.0 / 27.6 at 16:06. staged_lzm 22.9 / 149: staged batches add nothing on ~550-token prompts. Stack picker chose MTP only (the -lzm rule compared against base2). Hypothesis: the lazy table is slow only while its pages are cold (MADV_RANDOM 4 KB reads per row); -lzm off populates it at load. Queue 5: cold-table A/B (drop shard 4 from page cache, stock vs -lzm off, x2).
+- 18:47 run stack_repeat (-md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 | )
+- 18:53 stack (MTP only, lazy table): decode 25.61 (21.44/25.61/25.91), 88% accepted, but prompt 44 (22-64) and 568 faults/token: the lazy table went cold again (the 4 GB draft head load evicts pages). D-08: queue 6 runs the final stack = -lzm off + MTP, x2, KL, smoke.
+- 18:55 KL stack: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: -0.000000 ± 0.000000 Same top p: 100.000 ± 0.000 % 
+- 18:55 smoke FAILED
+- 18:55 queue3 done
+- 18:55 run handoff_alt_1 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39|41|43|45|47)\.ffn_.*_exps\.=CPU | )
+- 18:58 run handoff_contig_1 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24)\.ffn_.*_exps\.=CPU | )
+- 18:59 FAILED handoff_contig_1: {"name": "handoff_contig_1", "args": "-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24)\\.ffn_.*_exps\\.=CPU", "edxenv": "", "avail_ram_gb_start": 46.7, "free_vram_start": [24069, 21690]} server did not start, see results/night5/handoff_contig_1.server.log 
+- 18:59 run handoff_alt_2 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39|41|43|45|47)\.ffn_.*_exps\.=CPU | )
+- 19:03 run handoff_contig_2 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24)\.ffn_.*_exps\.=CPU | )
+- 19:03 hand-off test: alternating 25 CPU layers (~50 switches/token) 23.14 and 20.79 tok/s ≈ warm stock (23.0): switches are cheap. contig_1 failed (OOM: layer-number split put all GPU layers on GPU1); queue 7 reruns a balanced contiguous layout (0-11, 25-37). So pin's 13.4 was probably the lazy table's cold cache, not hand-offs (pin_nopageout later: 21.1). Every separate lazy-table run is confounded by the table's cache state.
+- 19:04 FAILED handoff_contig_2: {"name": "handoff_contig_2", "args": "-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24)\\.ffn_.*_exps\\.=CPU", "edxenv": "", "avail_ram_gb_start": 46.3, "free_vram_start": [24069, 21690]} server did not start, see results/night5/handoff_contig_2.server.log 
+- 19:06 KL repeat_base: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.025469 ± 0.001486 Same top p: 93.824 ± 0.533 % 
+- 19:08 KL floor_ub256: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.025971 ± 0.001658 Same top p: 94.020 ± 0.525 % 
+- 19:11 KL lzm_off: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: -0.000000 ± 0.000000 Same top p: 100.000 ± 0.000 % 
+- 19:14 KL floor_ub8: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: 0.025810 ± 0.001567 Same top p: 93.775 ± 0.535 % 
+- 19:14 queue4 done
+- 19:14 run cold_lazy_1 cold table ()
+- 19:17 run cold_lzm_1 cold table (-lzm off)
+- 19:21 run cold_lazy_2 cold table ()
+- 19:24 run cold_lzm_2 cold table (-lzm off)
+- 19:25 cold-table test REJECTS the cold-table hypothesis: with the table shard dropped from the page cache, stock lazy ran 22.03 / 23.77 tok/s, prompt ~167, 1.3-1.7 faults/token. What separates slow runs from fast ones is faults/token: every slow run had 260-917 faults/token (prompt 17-51 tok/s), every fast run <15 (prompt 110-175). -lzm off: low faults in 8/8 runs; lazy: high in 7/11 (mostly earlier in the day, avail RAM 35-42 GB, or with the draft head / pinning loaded). Cause not isolated (shared desktop: RAM and GPU0 use by other apps varied). KL: -lzm off is bit-exact (KL 0, 100% same top); batch-shape changes give ~0.025 (repeat_base -b 512: 0.0255, ub256: 0.0260). So: -lzm off stays in the stack as the robust, exact setting, but the '4x prompt' claim is withdrawn: warm stock reaches the same speed.
+- 19:27 queue5 done
+- 19:27 run stack_final_1 (-lzm off -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2)
+- 19:34 run stack_final_2 (-lzm off -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2)
+- 19:42 every separately launched MTP server had slow prompts (20-56 tok/s) and ~420-570 faults/token, stack_final_1 included (-lzm off + MTP: decode 25.26, prompt 38.6). Cause: the self-contained draft head loads after the fit filled both GPUs, so it runs on the CPU, output layer included, for every prompt token. D-12: queue 9 tests the shared head on GPU0 with a fit margin; queues 7/8 follow it.
+- 19:43 KL stack_final: chunk PPL ln(PPL(Q)/PPL(base)) KL Divergence Δp RMS Same top p Mean KLD: -0.000000 ± 0.000000 Same top p: 100.000 ± 0.000 % 
+- 19:46 smoke_final ok: [decode 8.9 tok/s, prompt 1.6 tok/s]
+- 19:46 queue6 done
+- 19:46 run stack_shared_1 (-lzm off -fitt 3600,1024 -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 -devd CUDA0 -ngld all)
+- 19:48 FAILED stack_shared_1: {"name": "stack_shared_1", "args": "-lzm off -fitt 3600,1024 -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 -devd CUDA0 -ngld all", "edxenv": "", "avail_ram_gb_start": 46.2, "free_vram_start": [24069, 21690]} server did not start, see results/night5/stack_shared_1.server.log 
+- 19:48 run stack_shared_2 (-lzm off -fitt 3600,1024 -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 -devd CUDA0 -ngld all)
+- 19:50 FAILED stack_shared_2: {"name": "stack_shared_2", "args": "-lzm off -fitt 3600,1024 -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2 -devd CUDA0 -ngld all", "edxenv": "", "avail_ram_gb_start": 45.7, "free_vram_start": [24069, 21690]} server did not start, see results/night5/stack_shared_2.server.log 
+- 19:52 smoke_shared FAILED
+- 19:52 queue9 done
+- 19:52 run handoff_contig2_1 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|2|3|4|5|6|7|8|9|10|11|25|26|27|28|29|30|31|32|33|34|35|36|37)\.ffn_.*_exps\.=CPU)
+- 19:53 shared MTP head fails to load in this build ('token_embd.weight' not found: no cross-model borrowing, as unsloth's README warns). The log shows the fit DOES reserve VRAM for the self-contained head, so the likelier cause of slow MTP prompts is VRAM: ~4 GB for the head moves ~2-3 layers of experts to RAM, the CPU tier outgrows the page cache, and every 512-token batch faults (hypothesis, not isolated). D-13: run.sh defaults to -lzm off; MTP=1 opts in (faster answers, slower prompts).
+- 19:56 run handoff_alt_3 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39|41|43|45|47)\.ffn_.*_exps\.=CPU)
+- 19:59 run handoff_contig2_2 (-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\.(0|1|2|3|4|5|6|7|8|9|10|11|25|26|27|28|29|30|31|32|33|34|35|36|37)\.ffn_.*_exps\.=CPU)
+- 20:03 queue7 done
+- 20:03 run fit_lzm_1 (-lzm off | )
+- 20:03 hand-off test done: alternating 25 CPU layers (~50 switches/token) 23.14/20.79/22.10 (mean 22.0) vs contiguous (~4) 17.50/21.93 (mean 19.7): switches cost ~0 here. Leverage check (unfitted): predicted 19.7 tok/s for 25 contiguous CPU layers, measured 19.7.
+- 20:06 run pin_lzm_1 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1)
+- 20:13 run pin_lzm_steer05_1 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=0.5)
+- 20:20 run fit_lzm_2 (-lzm off | )
+- 20:23 run pin_lzm_2 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1)
+- 20:27 FAILED pin_lzm_2:     raise RemoteDisconnected("Remote end closed connection without" http.client.RemoteDisconnected: Remote end closed connection without response 
+- 20:27 run pin_lzm_steer05_2 (-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35670 -lzm off | EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=0.5)
+- 20:56 queue8 done
+- 20:56 queue 8 (clean residency test, -lzm off, interleaved): llama.cpp fit 22.10 / 21.14 tok/s (prompt 149 / 143); profile pinned per expert 20.28 (prompt 32.5), repeat crashed (CUDA OOM on GPU0 mid-run: budget from free VRAM at start, other apps grew); profile + steering λ0.5 23.89 (prompt 28.9), repeat 12.17 / prompt 2.4 with avail RAM down to ~23 GB (unreliable). Verdict: inside llama.cpp, per-expert residency does not beat its own layer fit on decode and costs 4-5x prompt speed (pinned-mode prompts read every host expert, night 4). Leverage model predicted ~43 tok/s for it: wrong by 2x, so llama.cpp's pinned path has a cost CPU picks don't explain. Earlier 'steering 2x' was mostly the fault confound: clean gain ~+10% for KL 0.074.

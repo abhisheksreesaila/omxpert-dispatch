@@ -1,0 +1,41 @@
+{
+ "name": "handoff_alt_3",
+ "args": "-fit off -ngl 99 -lzm off -ts 53,47 -ot blk\\.(0|1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39|41|43|45|47)\\.ffn_.*_exps\\.=CPU",
+ "edxenv": "",
+ "avail_ram_gb_start": 45.7,
+ "free_vram_start": [
+  24069,
+  21849
+ ],
+ "load_s": 123.1,
+ "warmup_tok_s": [
+  12.12,
+  21.77,
+  21.29
+ ],
+ "decode_tok_s": [
+  21.49,
+  22.1,
+  22.23
+ ],
+ "prefill_tok_s": [
+  119.9,
+  147.8,
+  145.8
+ ],
+ "tok_s": 22.1,
+ "prefill_tok_s_median": 145.8,
+ "majflt_per_token": 11.7,
+ "ssd_MB_per_token_est": 0.05,
+ "texts": [
+  ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"brand.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    for (let index = 0; index < 100; index += 1) {\n      await cache.resolve(\n        { ...target, environmentId: EnvironmentId.make(`environment-${index}`) },\n        url,\n        signal"
+ ],
+ "rss_gb": 43.2,
+ "used_vram_mib": [
+  22127,
+  22206
+ ],
+ "avail_ram_gb_end": 43.9
+}

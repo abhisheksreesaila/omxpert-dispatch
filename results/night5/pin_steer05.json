@@ -1,0 +1,44 @@
+{
+ "name": "pin_steer05",
+ "args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 35360",
+ "edxenv": "EDX_PIN=results/night5/pins/q38_coding.bin EDX_PAGEOUT=1 EDX_STEER=0.5",
+ "avail_ram_gb_start": 44.2,
+ "free_vram_start": [
+  24069,
+  21690
+ ],
+ "load_s": 147.2,
+ "warmup_tok_s": [
+  16.36,
+  26.91,
+  22.74,
+  17.84,
+  24.8,
+  25.12
+ ],
+ "decode_tok_s": [
+  23.47,
+  22.88,
+  21.7
+ ],
+ "prefill_tok_s": [
+  10.7,
+  17.1,
+  18.4
+ ],
+ "tok_s": 22.88,
+ "prefill_tok_s_median": 17.1,
+ "majflt_per_token": 906.3,
+ "ssd_MB_per_token_est": 3.71,
+ "texts": [
+  ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"brand.svg\" };\n    expect(await cache.resolve(second, url, signal())).toBe(image);\n    expect(await cache.resolve(target, url, signal())).toBe(image);\n    expect(records.size).toBe(1);\n    expect(cache.estimate()).toBeLessThanOrEqual(PROJECT_FAVICON_MAX_TOTAL_BYTES);\n  });\n\n  it(\"drops the least re"
+ ],
+ "rss_gb": 40.6,
+ "used_vram_mib": [
+  22507,
+  21967
+ ],
+ "avail_ram_gb_end": 40.4
+}

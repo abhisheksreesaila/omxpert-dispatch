@@ -1,0 +1,46 @@
+{
+ "name": "mtp",
+ "args": "-md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2",
+ "edxenv": "",
+ "avail_ram_gb_start": 34.5,
+ "free_vram_start": [
+  23551,
+  21661
+ ],
+ "load_s": 162.2,
+ "warmup_tok_s": [
+  5.34,
+  20.69,
+  18.65,
+  15.04,
+  19.34,
+  17.66
+ ],
+ "decode_tok_s": [
+  17.84,
+  19.78,
+  20.86
+ ],
+ "prefill_tok_s": [
+  18.3,
+  31.0,
+  46.0
+ ],
+ "tok_s": 19.78,
+ "prefill_tok_s_median": 31.0,
+ "majflt_per_token": 481.8,
+ "ssd_MB_per_token_est": 1.97,
+ "draft_accept": 0.916,
+ "draft_n": 227,
+ "texts": [
+  ";\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction project(id: string, environmentId: EnvironmentId): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    members: [member(id, environmentId)],\n  };\n}\n\nfunction search(\n  overrides: Partial<SettingsScopeSearch> & Pick<SettingsScopeSearch, \"scope\">,\n): SettingsScopeSearch {\n  return {\n    scope: overrides.scope,\n",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(second, url, signal());\n    await cache.resolve(third, url, signal());\n    expect(cache.peek(second)).toBeNull();\n    expect(cache.peek(third)).not.toBeNull();\n    "
+ ],
+ "rss_gb": 39.3,
+ "used_vram_mib": [
+  22151,
+  23045
+ ],
+ "avail_ram_gb_end": 38.7
+}

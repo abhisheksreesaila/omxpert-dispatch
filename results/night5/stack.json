@@ -1,0 +1,37 @@
+{
+ "tricks": "ngram_table_populated_at_load (-lzm off), mtp",
+ "args": "-lzm off -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf --spec-type draft-mtp --spec-draft-n-max 2",
+ "env": "",
+ "which_runs": [
+  "stack_final_1",
+  "stack_final_2"
+ ],
+ "baseline_tok_s": 11.04,
+ "baseline_prefill_tok_s": 27.6,
+ "baseline_warm_tok_s": 22.98,
+ "baseline_warm_prefill_tok_s": 172.1,
+ "exact_stack_tok_s": 25.26,
+ "exact_stack_runs": [
+  21.45,
+  25.26,
+  25.29,
+  22.5,
+  26.89,
+  24.45
+ ],
+ "exact_stack_prefill_tok_s": 38.6,
+ "exact_stack_prefill_runs": [
+  19.7,
+  38.6,
+  56.5,
+  36.8,
+  67.9,
+  81.2
+ ],
+ "exact_stack_draft_accept": 0.883,
+ "exact_stack_kl": -0.0,
+ "exact_stack_same_top_pct": 100.0,
+ "kl_note": "MTP output is exact by construction (verified by the full model); the KL run checks the rest of the stack against the baseline logits. Batch-shape floor ~0.026.",
+ "smoke_ok": true,
+ "smoke_tail": "def fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using an iterative approach.\n    The sequence starts with 0, 1, 1, 2, 3, 5, ...\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b,\n\n[decode 8.9 tok/s, prompt 1.6 tok/s]\n"
+}

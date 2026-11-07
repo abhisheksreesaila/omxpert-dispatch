@@ -1,0 +1,276 @@
+{
+ "title": "Before: stock llama.cpp serving Qwen3.8-Flash-Next",
+ "subtitle": "One token's trip through a 111 GB model on 2\u00d73090 + 62 GB RAM + one NVMe, drawn like a database's storage tiers",
+ "style": "fieldnotes",
+ "floors": [
+  {
+   "id": "compute",
+   "label": "compute",
+   "note": "who does the math",
+   "nodes": [
+    "you",
+    "router",
+    "gpu0",
+    "gpu1",
+    "cpu"
+   ]
+  },
+  {
+   "id": "memory",
+   "label": "memory",
+   "note": "the buffer pool",
+   "nodes": [
+    "vram0",
+    "vram1",
+    "ram"
+   ]
+  },
+  {
+   "id": "disk",
+   "label": "disk",
+   "note": "the table on disk",
+   "nodes": [
+    "experts",
+    "ngram"
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "id": "you",
+   "label": "You",
+   "kind": "client",
+   "at": [
+    0,
+    0
+   ],
+   "tech": "chat / coding agent",
+   "desc": "Sends a prompt and waits for tokens."
+  },
+  {
+   "id": "router",
+   "label": "Router",
+   "kind": "ai",
+   "at": [
+    6,
+    0
+   ],
+   "tech": "48 layers \u00d7 pick 10 of 512",
+   "desc": "The query planner: for every token and every layer it picks which 10 of 512 experts (rows of weights) to read.",
+   "notes": "Database view: each expert is a 3 MB page; a token is a query that touches 480 pages."
+  },
+  {
+   "id": "gpu0",
+   "label": "GPU 0",
+   "kind": "service",
+   "at": [
+    12,
+    -5
+   ],
+   "tech": "RTX 3090",
+   "desc": "Runs attention, the shared parts and the experts of the layers that fit in its memory."
+  },
+  {
+   "id": "gpu1",
+   "label": "GPU 1",
+   "kind": "service",
+   "at": [
+    12,
+    0
+   ],
+   "tech": "RTX 3090, NVLink",
+   "desc": "Same, for the next block of layers."
+  },
+  {
+   "id": "cpu",
+   "label": "CPU",
+   "kind": "worker",
+   "at": [
+    12,
+    5
+   ],
+   "tech": "Ryzen 5900X, 12 cores",
+   "desc": "Computes the experts of the 24 layers (of 48) that did not fit on the GPUs, straight from RAM. Measured: 24 layers' experts here.",
+   "notes": "It waits while the GPUs work and the GPUs wait while it works: the two take turns."
+  },
+  {
+   "id": "vram0",
+   "label": "VRAM 0",
+   "kind": "cache",
+   "at": [
+    12,
+    -5
+   ],
+   "tech": "24 GB",
+   "desc": "Holds whole layers' experts, chosen by layer number, not by use."
+  },
+  {
+   "id": "vram1",
+   "label": "VRAM 1",
+   "kind": "cache",
+   "at": [
+    12,
+    0
+   ],
+   "tech": "24 GB",
+   "desc": "Same, for its layers."
+  },
+  {
+   "id": "ram",
+   "label": "RAM page cache",
+   "kind": "cache",
+   "at": [
+    12,
+    5
+   ],
+   "tech": "~35 GB free",
+   "desc": "The operating system caches the expert file here. The CPU-tier experts need ~38 GB, about what is free.",
+   "notes": "Database view: an LRU buffer pool smaller than the working set."
+  },
+  {
+   "id": "experts",
+   "label": "Expert file",
+   "kind": "storage",
+   "at": [
+    12,
+    5
+   ],
+   "tech": "77 GB, NVMe 990 PRO",
+   "desc": "A miss is a page fault: one 4 KB page at a time, ~2.5 GB/s, while the CPU waits."
+  },
+  {
+   "id": "ngram",
+   "label": "N-gram table",
+   "kind": "db",
+   "at": [
+    12,
+    0
+   ],
+   "tech": "28.8 GB, 320M rows",
+   "desc": "Qwen 4's lookup memory. Stock llama.cpp marks it 'lazy' and reads rows on demand. In the first run of the day the box took ~485 page faults per token and prompts crawled at ~28 tok/s; later stock runs reached ~23 tok/s and ~170 prompt tok/s with almost no faults.",
+   "notes": "Database view: a key-value index, keyed by the last 2-3 tokens."
+  }
+ ],
+ "edges": [
+  {
+   "from": "you",
+   "to": "router",
+   "label": "prompt"
+  },
+  {
+   "from": "router",
+   "to": "gpu0",
+   "label": "12 layers"
+  },
+  {
+   "from": "router",
+   "to": "gpu1",
+   "label": "12 layers"
+  },
+  {
+   "from": "router",
+   "to": "cpu",
+   "label": "24 layers"
+  },
+  {
+   "from": "gpu0",
+   "to": "vram0",
+   "label": "hit"
+  },
+  {
+   "from": "gpu1",
+   "to": "vram1",
+   "label": "hit"
+  },
+  {
+   "from": "cpu",
+   "to": "ram",
+   "label": "read experts"
+  },
+  {
+   "from": "ram",
+   "to": "experts",
+   "label": "page fault",
+   "style": "data"
+  },
+  {
+   "from": "router",
+   "to": "ngram",
+   "label": "16 rows",
+   "style": "data"
+  }
+ ],
+ "flows": [
+  {
+   "name": "One generated token",
+   "desc": "Decode: 11 tok/s in the first run of the day, ~23 tok/s once the box settled (same flags).",
+   "steps": [
+    {
+     "from": "you",
+     "to": "router",
+     "note": "The last token goes in; the router picks 10 experts in each of 48 layers."
+    },
+    {
+     "from": "router",
+     "to": "ngram",
+     "note": "The ~16 n-gram table rows for the last tokens are fetched on demand by llama.cpp's lazy reader."
+    },
+    {
+     "from": "router",
+     "to": "gpu0",
+     "note": "The first layers run on GPU 0: their experts sit in VRAM, a buffer-pool hit."
+    },
+    {
+     "from": "gpu0",
+     "to": "vram0",
+     "note": "Hits are cheap: the GPU reads 3 MB experts at ~800 GB/s."
+    },
+    {
+     "from": "router",
+     "to": "cpu",
+     "note": "Half the layers hand over to the CPU; the GPUs sit idle meanwhile."
+    },
+    {
+     "from": "cpu",
+     "to": "ram",
+     "note": "The CPU reads each picked expert from the page cache (~27 GB/s)."
+    },
+    {
+     "from": "ram",
+     "to": "experts",
+     "note": "Measured: 98.8% of the experts it needs are already in RAM; the rest are page faults, one small read at a time."
+    },
+    {
+     "at": "cpu",
+     "note": "Then the token goes back to the GPU for the output. Every layer is a hand-off and a host sync."
+    }
+   ]
+  },
+  {
+   "name": "Reading your prompt",
+   "desc": "Prefill: ~28 tok/s in the first run, ~170 once settled: page faults decide it.",
+   "steps": [
+    {
+     "from": "you",
+     "to": "router",
+     "note": "A 2,000-character prompt (~550 tokens) arrives and is cut into batches of 512 tokens."
+    },
+    {
+     "from": "router",
+     "to": "cpu",
+     "note": "For each batch, the CPU-tier layers' experts (~38 GB) are copied over PCIe to a GPU for the big matrix math."
+    },
+    {
+     "from": "cpu",
+     "to": "ram",
+     "note": "That copy re-reads every CPU-tier expert from RAM, once per 512 tokens."
+    },
+    {
+     "from": "ram",
+     "to": "experts",
+     "note": "What RAM can't hold comes from the SSD again, every batch: a full table scan per 512 rows."
+    }
+   ]
+  }
+ ]
+}

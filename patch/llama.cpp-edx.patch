@@ -1,6 +1,6 @@
-diff --git c/common/speculative.cpp w/common/speculative.cpp
+diff --git i/common/speculative.cpp w/common/speculative.cpp
 index e6290ea..09513ac 100644
---- c/common/speculative.cpp
+--- i/common/speculative.cpp
 +++ w/common/speculative.cpp
 @@ -2743,8 +2743,8 @@ common_params common_base_params_to_speculative(const common_params & params) {
          result.n_ubatch = params_spec.n_ubatch;
@@ -13,9 +13,57 @@ index e6290ea..09513ac 100644
  
      // dflash/dspark decode the whole noise block in a single pass and sample every block position on the backend
      // TODO: refactor such properties to be announced by the speculative types
-diff --git c/src/llama-context.cpp w/src/llama-context.cpp
+diff --git i/ggml/src/ggml-cpu/CMakeLists.txt w/ggml/src/ggml-cpu/CMakeLists.txt
+index 8327c52..10681de 100644
+--- i/ggml/src/ggml-cpu/CMakeLists.txt
++++ w/ggml/src/ggml-cpu/CMakeLists.txt
+@@ -29,6 +29,7 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
+     list (APPEND GGML_CPU_SOURCES
+         ggml-cpu/ggml-cpu.c
+         ggml-cpu/ggml-cpu.cpp
++        ggml-cpu/edx-prefetch.cpp
+         ggml-cpu/repack.cpp
+         ggml-cpu/repack.h
+         ggml-cpu/hbm.cpp
+diff --git i/ggml/src/ggml-cpu/ggml-cpu.c w/ggml/src/ggml-cpu/ggml-cpu.c
+index f4eaea5..375f989 100644
+--- i/ggml/src/ggml-cpu/ggml-cpu.c
++++ w/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -1560,6 +1560,9 @@ static void * incr_ptr_aligned(void ** p, size_t size, size_t align) {
+     return ptr;
+ }
+ 
++void edx_prefetch_mmid(const struct ggml_tensor * src0, const struct ggml_tensor * ids);
++void edx_prefetch_mmid_end(const struct ggml_tensor * ids);
++
+ static void ggml_compute_forward_mul_mat_id(
+         const struct ggml_compute_params * params,
+               struct ggml_tensor * dst) {
+@@ -1674,6 +1677,10 @@ static void ggml_compute_forward_mul_mat_id(
+         }
+     }
+ 
++    if (ith == 0) {
++        edx_prefetch_mmid(src0, ids); // night 5: read pool + layer-ahead prefetch (EDX_PF_MODE), no-op when unset
++    }
++
+     // reset current_chunk
+     for (int cur_a = ith; cur_a < n_as; cur_a += nth) {
+         atomic_int * current_chunk_ctr = (atomic_int *)(atomic_current_chunk + cur_a);
+@@ -1747,6 +1754,10 @@ static void ggml_compute_forward_mul_mat_id(
+             current_chunk = atomic_fetch_add_explicit(current_chunk_ctr, 1, memory_order_relaxed);
+         }
+     }
++
++    if (ith == 0) {
++        edx_prefetch_mmid_end(ids); // night 5: CPU expert time per prefetch mode
++    }
+ }
+ 
+ /////////////////////////////////
+diff --git i/src/llama-context.cpp w/src/llama-context.cpp
 index eb97569..ad7f91a 100644
---- c/src/llama-context.cpp
+--- i/src/llama-context.cpp
 +++ w/src/llama-context.cpp
 @@ -1673,6 +1673,9 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
      } else {
@@ -47,9 +95,9 @@ index eb97569..ad7f91a 100644
      return res;
  }
  
-diff --git c/src/llama-graph.cpp w/src/llama-graph.cpp
+diff --git i/src/llama-graph.cpp w/src/llama-graph.cpp
 index edf1ca7..d8a6c77 100644
---- c/src/llama-graph.cpp
+--- i/src/llama-graph.cpp
 +++ w/src/llama-graph.cpp
 @@ -2339,6 +2339,38 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
          cb(selection_probs, "ffn_moe_probs_masked", il);
@@ -214,9 +262,9 @@ index edf1ca7..d8a6c77 100644
          return nullptr;
      }
  
-diff --git c/src/llama-moe-cache.cpp w/src/llama-moe-cache.cpp
+diff --git i/src/llama-moe-cache.cpp w/src/llama-moe-cache.cpp
 index 6a343a7..80ecc2d 100644
---- c/src/llama-moe-cache.cpp
+--- i/src/llama-moe-cache.cpp
 +++ w/src/llama-moe-cache.cpp
 @@ -1,5 +1,16 @@
  #include "llama-moe-cache.h"
@@ -671,9 +719,9 @@ index 6a343a7..80ecc2d 100644
  ggml_backend_t llama_moe_cache::backend(int32_t il) const {
      return pimpl->backend(il);
  }
-diff --git c/src/llama-moe-cache.h w/src/llama-moe-cache.h
+diff --git i/src/llama-moe-cache.h w/src/llama-moe-cache.h
 index 6c8e365..b825c4c 100644
---- c/src/llama-moe-cache.h
+--- i/src/llama-moe-cache.h
 +++ w/src/llama-moe-cache.h
 @@ -34,6 +34,16 @@ public:
  
@@ -692,9 +740,9 @@ index 6c8e365..b825c4c 100644
  private:
      struct impl;
      std::unique_ptr<impl> pimpl;
-diff --git c/tools/CMakeLists.txt w/tools/CMakeLists.txt
+diff --git i/tools/CMakeLists.txt w/tools/CMakeLists.txt
 index 6a6592c..3b9e4db 100644
---- c/tools/CMakeLists.txt
+--- i/tools/CMakeLists.txt
 +++ w/tools/CMakeLists.txt
 @@ -17,6 +17,7 @@ else()
      add_subdirectory(batched-bench)
@@ -704,3 +752,463 @@ index 6a6592c..3b9e4db 100644
      add_subdirectory(llama-bench)
      add_subdirectory(completion)
      add_subdirectory(perplexity)
+diff --git i/tools/server/server-context.cpp w/tools/server/server-context.cpp
+index 48f1e93..fe45ad2 100644
+--- i/tools/server/server-context.cpp
++++ w/tools/server/server-context.cpp
+@@ -583,6 +583,11 @@ struct server_slot {
+             return 0;
+         }
+ 
++        // EDX night 5: a request can opt out of drafting with "speculative.n_max": 0 (in-process A/B of MTP on/off)
++        if (task->params.speculative.draft.n_max <= 0) {
++            return 0;
++        }
++
+         // determine the max draft that fits the current slot state
+         // note: slot.prompt is not yet expanded with the `id` token sampled above
+         //       also, need to leave space for 1 extra token to allow context shifts
+diff --git i/tools/server/server-schema.cpp w/tools/server/server-schema.cpp
+index 0a14a96..c4edbea 100644
+--- i/tools/server/server-schema.cpp
++++ w/tools/server/server-schema.cpp
+@@ -196,6 +196,11 @@ std::vector<std::unique_ptr<field>> make_llama_cmpl_schema(const common_params &
+     // Speculative decoding params
+     //
+ 
++    // EDX night 5: only the per-request draft cap (0 = no drafting), for an in-process A/B of MTP on/off
++    add((new field_num("speculative.n_max", params.speculative.draft.n_max))
++        ->set_hard_limits(0, INT32_MAX)
++        ->set_desc("Maximum number of tokens to draft during speculative decoding (0 = no drafting for this request)"));
++
+     // TODO: to keep things simple, we disable speculative parameter adjustments for now
+ #if 0
+     // TODO: for now, be able to adjust only the draft-model based speculative parameters
+diff --git 1/ggml/src/ggml-cpu/edx-prefetch.cpp 2/ggml/src/ggml-cpu/edx-prefetch.cpp
+new file mode 100644
+index 0000000..1aa69b4
+--- /dev/null
++++ 2/ggml/src/ggml-cpu/edx-prefetch.cpp
+@@ -0,0 +1,246 @@
++// Expert Dispatch (night 5): read pool + layer-ahead prefetch for MoE experts that live in mmap'd RAM/SSD.
++// Ideas from 0xSero's glm-flash-lite (a pool of parallel readers; start the next layer's reads before it runs),
++// rebuilt for llama.cpp's CPU expert path. Exact: it only warms the page cache, the math is unchanged.
++//
++// EDX_PF_MODE (unset = off):
++//   stats  : measure only. For every CPU expert op, how much of the picked experts was already in RAM (mincore).
++//   same   : when a layer's first expert op runs, hand the same experts' other matrices (up/down) to the read pool.
++//   prev   : same + next layer's experts guessed from the previous token's picks at that layer.
++//   markov : same + next layer's experts guessed by a learned table (this layer's picks -> next layer's), EDX_PF_PRED=<file>.
++//   both   : prev + markov.
++// EDX_PF_THREADS (8): readers. EDX_PF_N (16): next-layer experts to fetch per token.
++// EDX_PF_CTL=<file>: the mode is re-read from this file every 64 ops, so one warmed server can A/B modes in turn
++//   (separate server runs swing 11-19 tok/s on this box from page-cache state alone); per-mode stats go to <file>.stats.
++// EDX_PF_IO: advise (default: madvise WILLNEED, the kernel reads the range in large requests) or touch (one byte per page).
++// Learned table file: int32 L, E, M, then int16 succ[L-1][E][M] (most frequent next-layer experts for each expert).
++#include "ggml.h"
++
++#include <sys/mman.h>
++#include <unistd.h>
++#include <time.h>
++
++#include <atomic>
++#include <condition_variable>
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <deque>
++#include <mutex>
++#include <string>
++#include <thread>
++#include <vector>
++
++namespace {
++
++enum { KIND_GATE, KIND_UP, KIND_DOWN, KIND_GATE_UP, N_KIND };
++constexpr int MAX_LAYERS = 256;
++
++struct mat { const char * data = nullptr; size_t nb02 = 0; int64_t ne02 = 0; };
++
++struct state {
++    int mode = -1;   // 0 off, 1 stats, 2 same, 3 prev, 4 markov, 5 both
++    int n_pred = 16;
++    mat mats[MAX_LAYERS][N_KIND];
++    std::vector<int32_t> last[MAX_LAYERS];   // previous token's picks per layer
++    int last_layer_seen = -1;
++    int32_t L = 0, E = 0, M = 0;
++    std::vector<int16_t> succ;
++    // read pool
++    std::mutex mu;
++    std::condition_variable cv;
++    std::deque<std::pair<const char *, size_t>> q;
++    std::vector<std::thread> workers;
++    // stats
++    std::atomic<long long> pages_total{0}, pages_res{0}, ops{0}, jobs{0};
++    long long m_total[6] = {0}, m_res[6] = {0}, m_ops[6] = {0}, m_ns[6] = {0};
++    long long t_start = 0; int t_mode = 0;
++    const char * ctl = nullptr;
++    bool touch = false;
++    bool workers_started = false;
++    std::vector<unsigned char> vec;
++};
++
++state S;
++
++void report() {
++    if (S.mode >= 1 && S.pages_total > 0) {
++        long long ns = 0; for (int i = 0; i < 6; ++i) ns += S.m_ns[i];
++        fprintf(stderr, "EDX_PF mode=%d ops=%lld picked_pages=%lld resident_at_use=%.4f prefetch_jobs=%lld cpu_expert_ms=%.1f\n",
++                S.mode, S.ops.load(), S.pages_total.load(), (double) S.pages_res / S.pages_total, S.jobs.load(), ns / 1e6);
++    }
++}
++
++void worker() {
++    for (;;) {
++        std::pair<const char *, size_t> j;
++        {
++            std::unique_lock<std::mutex> lk(S.mu);
++            S.cv.wait(lk, [] { return !S.q.empty(); });
++            j = S.q.front(); S.q.pop_front();
++        }
++        // touch one byte per page: synchronous faults in parallel across readers = a deep read queue on the SSD
++        // (madvise WILLNEED alone goes through readahead, which the mmap's MADV_RANDOM hint limits)
++        if (S.touch) {
++            volatile char sink = 0;
++            for (size_t off = 0; off < j.second; off += 4096) {
++                sink += j.first[off];
++            }
++            (void) sink;
++        } else {
++            const uintptr_t pg = 4096, a = (uintptr_t) j.first & ~(pg - 1);
++            madvise((void *) a, (uintptr_t) j.first + j.second - a, MADV_WILLNEED);
++        }
++    }
++}
++
++int parse_mode(const char * m) {
++    if (!strncmp(m, "stats", 5))  return 1;
++    if (!strncmp(m, "same", 4))   return 2;
++    if (!strncmp(m, "prev", 4))   return 3;
++    if (!strncmp(m, "markov", 6)) return 4;
++    if (!strncmp(m, "both", 4))   return 5;
++    return 1;   // "off" under a control file still measures
++}
++
++void start_workers() {
++    if (S.workers_started) return;
++    S.workers_started = true;
++    const int nt = getenv("EDX_PF_THREADS") ? atoi(getenv("EDX_PF_THREADS")) : 8;
++    for (int i = 0; i < nt; ++i) { S.workers.emplace_back(worker); S.workers.back().detach(); }
++}
++
++void poll_ctl() {
++    char buf[32] = {0};
++    FILE * f = fopen(S.ctl, "r");
++    if (f) { if (fgets(buf, sizeof(buf), f)) S.mode = parse_mode(buf); fclose(f); }
++    if (S.mode >= 2) start_workers();
++    std::string sp = std::string(S.ctl) + ".stats";
++    FILE * o = fopen(sp.c_str(), "w");
++    if (o) {
++        for (int i = 1; i < 6; ++i) fprintf(o, "%d %lld %lld %lld %lld\n", i, S.m_ops[i], S.m_total[i], S.m_res[i], S.m_ns[i]);
++        fclose(o);
++    }
++}
++
++void init() {
++    const char * m = getenv("EDX_PF_MODE");
++    S.ctl = getenv("EDX_PF_CTL");
++    S.touch = getenv("EDX_PF_IO") && !strcmp(getenv("EDX_PF_IO"), "touch");
++    S.mode = 0;
++    if (S.ctl) m = "stats";
++    if (!m) return;
++    S.mode = parse_mode(m);
++    if (getenv("EDX_PF_N")) S.n_pred = atoi(getenv("EDX_PF_N"));
++    if (S.mode >= 4 || S.ctl) {
++        const char * p = getenv("EDX_PF_PRED");
++        FILE * f = p ? fopen(p, "rb") : nullptr;
++        if (f && fread(&S.L, 4, 1, f) == 1 && fread(&S.E, 4, 1, f) == 1 && fread(&S.M, 4, 1, f) == 1) {
++            S.succ.resize((size_t) (S.L - 1) * S.E * S.M);
++            if (fread(S.succ.data(), 2, S.succ.size(), f) != S.succ.size()) S.succ.clear();
++        }
++        if (f) fclose(f);
++        fprintf(stderr, "EDX_PF learned table %s: L=%d E=%d M=%d %s\n", p ? p : "(none)", S.L, S.E, S.M, S.succ.empty() ? "MISSING" : "ok");
++    }
++    if (S.mode >= 2) start_workers();
++    if (S.ctl) poll_ctl();
++    atexit(report);
++}
++
++int kind_of(const char * name, int * layer) {
++    if (sscanf(name, "blk.%d.", layer) != 1 || *layer < 0 || *layer >= MAX_LAYERS) return -1;
++    if (strstr(name, "ffn_gate_up_exps")) return KIND_GATE_UP;
++    if (strstr(name, "ffn_gate_exps"))    return KIND_GATE;
++    if (strstr(name, "ffn_up_exps"))      return KIND_UP;
++    if (strstr(name, "ffn_down_exps"))    return KIND_DOWN;
++    return -1;
++}
++
++void enqueue(int layer, int e, int skip_kind) {
++    std::lock_guard<std::mutex> lk(S.mu);
++    for (int k = 0; k < N_KIND; ++k) {
++        const mat & mm = S.mats[layer][k];
++        if (k == skip_kind || !mm.data || e < 0 || e >= mm.ne02) continue;
++        if (S.q.size() > 4096) return;   // readers are behind: drop guesses rather than queue stale work
++        S.q.emplace_back(mm.data + (size_t) e * mm.nb02, mm.nb02);
++        S.jobs++;
++    }
++    S.cv.notify_all();
++}
++
++} // namespace
++
++extern "C" void edx_prefetch_mmid(const struct ggml_tensor * src0, const struct ggml_tensor * ids) {
++    if (S.mode < 0) init();
++    if (S.mode == 0 || ids->ne[1] > 8) return;   // decode only; prompt batches read whole tensors anyway
++    int layer;
++    const int kind = kind_of(src0->name, &layer);
++    if (kind < 0) return;
++    mat & me = S.mats[layer][kind];
++    if (!me.data) { me.data = (const char *) src0->data; me.nb02 = src0->nb[2]; me.ne02 = src0->ne[2]; }
++
++    std::vector<int32_t> picked;
++    for (int64_t t = 0; t < ids->ne[1]; ++t) {
++        for (int64_t i = 0; i < ids->ne[0]; ++i) {
++            const int32_t e = *(const int32_t *) ((const char *) ids->data + t*ids->nb[1] + i*ids->nb[0]);
++            if (e >= 0) picked.push_back(e);
++        }
++    }
++
++    // stats: how much of what this op is about to read is already in RAM
++    S.ops++;
++    if (S.ctl && S.ops % 64 == 0) poll_ctl();
++    const int md = S.mode;
++    S.m_ops[md]++;
++    { timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); S.t_start = ts.tv_sec * 1000000000LL + ts.tv_nsec; S.t_mode = md; }
++    for (int32_t e : picked) {
++        const uintptr_t pg = 4096;
++        const uintptr_t a = (uintptr_t) (me.data + (size_t) e * me.nb02) & ~(pg - 1);
++        const uintptr_t b = (uintptr_t) (me.data + (size_t) (e + 1) * me.nb02);
++        const size_t np = (b - a + pg - 1) / pg;
++        if (S.vec.size() < np) S.vec.resize(np);
++        if (mincore((void *) a, b - a, S.vec.data()) == 0) {
++            long long r = 0;
++            for (size_t i = 0; i < np; ++i) r += S.vec[i] & 1;
++            S.pages_res += r; S.pages_total += (long long) np;
++            S.m_res[md] += r; S.m_total[md] += (long long) np;
++        }
++    }
++    if (S.mode == 1) return;
++
++    // first expert op of this layer for this token: fetch the other matrices of the picked experts, then guess the next layer
++    const bool first_of_layer = layer != S.last_layer_seen;
++    S.last_layer_seen = layer;
++    if (!first_of_layer) return;
++    for (int32_t e : picked) enqueue(layer, e, kind);
++
++    const int nl = layer + 1;
++    if (nl >= MAX_LAYERS) { S.last[layer] = picked; return; }
++    std::vector<int32_t> guess;
++    if ((S.mode == 3 || S.mode == 5) && !S.last[nl].empty()) {
++        guess = S.last[nl];
++    }
++    if ((S.mode == 4 || S.mode == 5) && !S.succ.empty() && layer < S.L - 1) {
++        std::vector<float> score(S.E, 0.0f);
++        for (int32_t e : picked) {
++            if (e >= S.E) continue;
++            const int16_t * s = &S.succ[((size_t) layer * S.E + e) * S.M];
++            for (int j = 0; j < S.M; ++j) if (s[j] >= 0) score[s[j]] += 1.0f / (1 + j);
++        }
++        for (int n = 0; n < S.n_pred; ++n) {
++            int best = -1; float bv = 0.0f;
++            for (int e = 0; e < S.E; ++e) if (score[e] > bv) { bv = score[e]; best = e; }
++            if (best < 0) break;
++            score[best] = 0.0f; guess.push_back(best);
++        }
++    }
++    for (int32_t e : guess) enqueue(nl, e, -1);
++    S.last[layer] = picked;
++}
++
++// end of the same op on thread 0 (the op ends in a barrier, so thread 0's time ~ the op's time): CPU expert time per mode
++extern "C" void edx_prefetch_mmid_end(const struct ggml_tensor * ids) {
++    if (S.mode <= 0 || ids->ne[1] > 8 || S.t_start == 0) return;
++    timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
++    S.m_ns[S.t_mode] += ts.tv_sec * 1000000000LL + ts.tv_nsec - S.t_start;
++    S.t_start = 0;
++}
+diff --git 1/tools/edx-trace/edx-trace.cpp 2/tools/edx-trace/edx-trace.cpp
+new file mode 100644
+index 0000000..b09dc61
+--- /dev/null
++++ 2/tools/edx-trace/edx-trace.cpp
+@@ -0,0 +1,160 @@
++// Expert Dispatch: per-token MoE routing tracer.
++// Runs the prompt file (-f) in chunks of n_ctx and writes, for every token,
++// the top-k expert ids of every MoE layer as int32 [T, L, K] to -o.
++// Uses cb_eval on "ffn_moe_topk-<il>" (slower than plain inference; fine for tracing).
++#include "arg.h"
++#include "common.h"
++#include "log.h"
++#include "llama.h"
++#include "ggml-backend.h"
++
++#include <cstdio>
++#include <cstring>
++#include <map>
++#include <vector>
++
++static bool g_hidden = false; // EDX_TRACE_HIDDEN=<file>: dump router inputs attn_post_norm (f16 [T, L, n_embd])
++static bool g_probs = false; // EDX_TRACE_PROBS=<file>: also dump router probabilities (f16 [T, L, E])
++
++struct trace_state {
++    std::map<int, std::vector<float>> probs; // layer -> [n_tok * E]
++    std::map<int, std::vector<float>> hid;   // layer -> [n_tok * n_embd]
++    int D = 0;
++    int E = 0;
++    std::map<int, std::vector<int32_t>> per_layer;  // layer -> ids for this decode, [n_tok * k]
++    int k = 0;
++    std::vector<uint8_t> buf;
++};
++
++static bool edx_cb(struct ggml_tensor * t, bool ask, void * ud) {
++    if (g_hidden && strncmp(t->name, "attn_post_norm-", 15) == 0 && t->type == GGML_TYPE_F32) {
++        if (ask) return true;
++        auto * st = (trace_state *) ud;
++        const int il = atoi(t->name + 15);
++        const int64_t d = t->ne[0], n = t->ne[1];
++        st->D = (int) d;
++        auto & v = st->hid[il];
++        std::vector<float> row(d);
++        for (int64_t j = 0; j < n; ++j) {
++            ggml_backend_tensor_get(t, row.data(), j * t->nb[1], d * sizeof(float));
++            v.insert(v.end(), row.begin(), row.end());
++        }
++        return true;
++    }
++    if (g_probs && strncmp(t->name, "ffn_moe_probs-", 14) == 0 && t->type == GGML_TYPE_F32) {
++        if (ask) return true;
++        auto * st = (trace_state *) ud;
++        const int il = atoi(t->name + 14);
++        const int64_t e = t->ne[0], n = t->ne[1];
++        st->E = (int) e;
++        auto & v = st->probs[il];
++        std::vector<float> row(e);
++        for (int64_t j = 0; j < n; ++j) {
++            ggml_backend_tensor_get(t, row.data(), j * t->nb[1], e * sizeof(float));
++            v.insert(v.end(), row.begin(), row.end());
++        }
++        return true;
++    }
++    if (strncmp(t->name, "ffn_moe_topk-", 13) != 0) return ask ? false : true;
++    if (ask) return true;
++    auto * st = (trace_state *) ud;
++    const int il = atoi(t->name + 13);
++    // selected_experts: I32 [k, n_tokens] (possibly a view; copy rows of ne0)
++    const int64_t k = t->ne[0], n = t->ne[1];
++    st->k = (int) k;
++    if (getenv("EDX_DEBUG")) fprintf(stderr, "EDXDBG %s ne=%lld,%lld,%lld type=%d\n", t->name, (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2], (int) t->type);
++    auto & v = st->per_layer[il];
++    std::vector<int32_t> row(k);
++    for (int64_t j = 0; j < n; ++j) {
++        ggml_backend_tensor_get(t, row.data(), j * t->nb[1], k * sizeof(int32_t));
++        v.insert(v.end(), row.begin(), row.end());
++    }
++    return true;
++}
++
++int main(int argc, char ** argv) {
++    common_params params;
++    params.out_file = "trace.bin";
++    if (!common_params_parse(argc, argv, params, LLAMA_EXAMPLE_IMATRIX)) return 1;
++    trace_state st;
++    params.cb_eval = edx_cb;
++    params.cb_eval_user_data = &st;
++    params.warmup = false;
++
++    llama_backend_init();
++    auto init = common_init_from_params(params);
++    auto * model = init->model();
++    auto * ctx = init->context();
++    if (!model || !ctx) { LOG_ERR("failed to init\n"); return 1; }
++
++    std::vector<llama_token> toks = common_tokenize(ctx, params.prompt, true, params.parse_special);
++    const int n_ctx = llama_n_ctx(ctx);
++    const int n_batch = std::min<int>(params.n_batch, n_ctx);
++    FILE * fo = fopen(params.out_file.c_str(), "wb");
++    FILE * fp = getenv("EDX_TRACE_PROBS") ? fopen(getenv("EDX_TRACE_PROBS"), "wb") : nullptr;
++    g_probs = fp != nullptr;
++    FILE * fh = getenv("EDX_TRACE_HIDDEN") ? fopen(getenv("EDX_TRACE_HIDDEN"), "wb") : nullptr;
++    g_hidden = fh != nullptr;
++    long long T = 0;
++    int L = 0;
++    for (size_t s = 0; s + 1 < toks.size(); s += n_ctx) {
++        llama_memory_clear(llama_get_memory(ctx), true);
++        const int len = (int) std::min<size_t>(n_ctx, toks.size() - s);
++        for (int b = 0; b < len; b += n_batch) {
++            const int nb = std::min(n_batch, len - b);
++            st.per_layer.clear();
++            st.probs.clear();
++            st.hid.clear();
++            // every token is an output, else the last layer only runs on the final row
++            llama_batch batch = llama_batch_init(nb, 0, 1);
++            for (int j = 0; j < nb; ++j) {
++                batch.token[j] = toks[s + b + j]; batch.pos[j] = b + j;
++                batch.n_seq_id[j] = 1; batch.seq_id[j][0] = 0; batch.logits[j] = 1;
++            }
++            batch.n_tokens = nb;
++            const int rc = llama_decode(ctx, batch);
++            llama_batch_free(batch);
++            if (rc) { LOG_ERR("decode failed\n"); return 1; }
++            if (L == 0) L = (int) st.per_layer.size();
++            // write [nb, L, k]
++            std::vector<int32_t> out((size_t) nb * L * st.k);
++            int li = 0;
++            for (auto & [il, v] : st.per_layer) {
++                if ((int) v.size() != nb * st.k) { fprintf(stderr, "EDX mismatch layer %d: %zu vs %d\n", il, v.size(), nb * st.k); return 1; }
++                for (int j = 0; j < nb; ++j)
++                    memcpy(&out[((size_t) j * L + li) * st.k], &v[(size_t) j * st.k], st.k * sizeof(int32_t));
++                ++li;
++            }
++            fwrite(out.data(), sizeof(int32_t), out.size(), fo);
++            if (fh && !st.hid.empty()) { // [nb, L, D] as f16
++                std::vector<ggml_fp16_t> hv((size_t) nb * st.hid.size() * st.D);
++                int lj = 0;
++                for (auto & [il, v] : st.hid) {
++                    for (int j = 0; j < nb; ++j)
++                        for (int d = 0; d < st.D; ++d)
++                            hv[((size_t) j * st.hid.size() + lj) * st.D + d] = ggml_fp32_to_fp16(v[(size_t) j * st.D + d]);
++                    ++lj;
++                }
++                fwrite(hv.data(), sizeof(ggml_fp16_t), hv.size(), fh);
++            }
++            if (fp && !st.probs.empty()) { // [nb, L, E] as f16
++                std::vector<ggml_fp16_t> pr((size_t) nb * st.probs.size() * st.E);
++                int lj = 0;
++                for (auto & [il, v] : st.probs) {
++                    for (int j = 0; j < nb; ++j)
++                        for (int e = 0; e < st.E; ++e)
++                            pr[((size_t) j * st.probs.size() + lj) * st.E + e] = ggml_fp32_to_fp16(v[(size_t) j * st.E + e]);
++                    ++lj;
++                }
++                fwrite(pr.data(), sizeof(ggml_fp16_t), pr.size(), fp);
++            }
++            T += nb;
++        }
++        LOG_INF("edx-trace: %lld / %zu tokens\n", T, toks.size());
++    }
++    fclose(fo);
++    if (fp) fclose(fp);
++    if (fh) fclose(fh);
++    fprintf(stderr, "EDX_TRACE_DONE T=%lld L=%d K=%d\n", T, L, st.k);
++    return 0;
++}
+diff --git 1/tools/edx-trace/CMakeLists.txt 2/tools/edx-trace/CMakeLists.txt
+new file mode 100644
+index 0000000..c8dd8b5
+--- /dev/null
++++ 2/tools/edx-trace/CMakeLists.txt
+@@ -0,0 +1,4 @@
++set(TARGET llama-edx-trace)
++add_executable(${TARGET} edx-trace.cpp)
++target_link_libraries(${TARGET} PRIVATE llama-common llama ggml ${CMAKE_THREAD_LIBS_INIT})
++target_compile_features(${TARGET} PRIVATE cxx_std_17)

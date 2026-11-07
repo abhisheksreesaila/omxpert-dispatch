@@ -1,0 +1,42 @@
+{
+ "name": "pf_stats",
+ "args": "",
+ "edxenv": "EDX_PF_MODE=stats",
+ "avail_ram_gb_start": 41.7,
+ "free_vram_start": [
+  24069,
+  21548
+ ],
+ "load_s": 114.1,
+ "warmup_tok_s": [
+  8.79,
+  13.75,
+  14.61
+ ],
+ "decode_tok_s": [
+  11.11,
+  17.87,
+  19.35
+ ],
+ "prefill_tok_s": [
+  16.1,
+  45.4,
+  69.8
+ ],
+ "tok_s": 17.87,
+ "prefill_tok_s_median": 45.4,
+ "majflt_per_token": 597.3,
+ "ssd_MB_per_token_est": 2.45,
+ "texts": [
+  "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+  "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.lengt"
+ ],
+ "rss_gb": 40.7,
+ "used_vram_mib": [
+  23285,
+  22596
+ ],
+ "avail_ram_gb_end": 40.6,
+ "edx_pf": "EDX_PF mode=1 ops=34456 picked_pages=92064560 resident_at_use=0.9879 prefetch_jobs=0"
+}
