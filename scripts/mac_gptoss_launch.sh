@@ -1,6 +1,6 @@
 #!/bin/bash
 # wait for the gpt-oss trace on the Mac, build its coding profile here, push it, start mac_gptoss.sh
-K="-i $HOME/.ssh/edx_mac -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15"; H=${MAC_HOST:?set MAC_HOST=user@host}
+K="-i ${MAC_KEY:?set MAC_KEY=path-to-ssh-key} -o BatchMode=yes -o ConnectTimeout=15"; H=${MAC_HOST:?set MAC_HOST=user@host}
 cd ~/expert-dispatch; mkdir -p results/mac results/gptoss
 until ssh $K $H 'test -f ~/expert-dispatch/results/mac/chain3.done' 2>/dev/null; do sleep 120; done
 scp -q $K $H:expert-dispatch/results/gptoss_trace.bin $H:expert-dispatch/results/mac/batch.log $H:expert-dispatch/results/mac/ppl_skip.log results/gptoss/ || exit 1

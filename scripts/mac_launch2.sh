@@ -1,6 +1,6 @@
 #!/bin/bash
 # wait until the Mac answers, sync the patched source, rebuild, smoke-test steer-only, then run mac_bench2.sh under caffeinate
-K="-i $HOME/.ssh/edx_mac -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10"; H=${MAC_HOST:?set MAC_HOST=user@host}
+K="-i ${MAC_KEY:?set MAC_KEY=path-to-ssh-key} -o BatchMode=yes -o ConnectTimeout=10"; H=${MAC_HOST:?set MAC_HOST=user@host}
 for try in 1 2 3 4 5 6; do
 until ssh $K $H true 2>/dev/null; do sleep 60; done
 cd ~/expert-dispatch

@@ -4,6 +4,8 @@
 
 **Cover page: https://abhisheksreesaila.github.io/omxpert-dispatch/**
 
+Research journey, day by day: [docs/JOURNEY.md](docs/JOURNEY.md) →
+
 **Run a mixture-of-experts model far bigger than your memory by loading only the experts *your* work uses.**
 
 A 63 GB model (gpt-oss-120b, as released, MXFP4) on a 16 GB MacBook Pro (Apple M4). Exact model: 1.04 tok/s. Steered toward the coding profile: 2.96 tok/s on real text (λ=1, +8.3% perplexity).
