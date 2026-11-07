@@ -151,12 +151,37 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 
 ---
 
+
+## Day 6 · Nov 6–7 (22:50–04:00) 🧬 Can we combine all three sets of tricks into one engine that beats stock?
+
+**Tried.** A profile learned from the owner's own chat history, FreeToken's engine as is, then FreeToken's idea (the CPU computes cold experts while the GPU computes hot ones) ported into llama.cpp's scheduler, on top of 0xSero's exclusive tiers. Measured with interleaved servers on held-out chat prompts.
+
+✅ **Worked**
+- **The combined stack beats stock llama.cpp:** 22.2 / 21.1 vs 17.7 / 15.7 tok/s decode, prompts 218 / 202 vs 108 / 83.
+- **The profile is personal:** 30% of experts serve 79% of picks in new chat sessions; someone else's (coding) profile serves 44%. 2,000 tokens of history are enough.
+- Three prompt-path fixes took pinned mode from 3,148 page faults per token to 48.
+- `omxpert/profile.sh` learns your experts from your own text; `STACK=pinned omxpert/run.sh` serves them.
+
+❌ **Failed**
+- **FreeToken as is: 1.4 tok/s** on this 64 GB desktop: its VRAM cache can only hold experts that are also in RAM.
+- On text unlike the profile (coding prompts) the stack was slower than stock: 10.0 vs 14.9 / 13.8 tok/s (one round each).
+- MTP and layer-ahead prefetch on the stack: no gain. Hot/cold split for prompt batches: CUDA crash.
+- Not bit-exact: greedy text matches stock 49% word for word (another engine on the same model: 35%).
+
+↩️ **Retracted**
+- Night 5's "per-expert pinning doesn't pay inside llama.cpp": a prompt-path bug, not a property of pinning.
+- Overlap looked like +21% in separate runs; the same-server A/B says +2–5%.
+
+💡 **The lesson.** The lever is *which* experts sit in VRAM, learned from your own work. Running the CPU and GPU at once matters little once the profile is right.
+
+📄 [report_night6.md](logs/report_night6.md) · [journal_night6.md](logs/journal_night6.md) · [decisions_night6.md](logs/decisions_night6.md) · [before / after](night6_before_after.html)
+
 ## Where it stands
 
 - **It runs, exactly.** Qwen3.8-Flash-Next (Qwen 4 preview architecture, 111 GB at 4-bit) runs bit-exact on 2× RTX 3090 + 64 GB RAM at ~21–24 tok/s decode in llama.cpp.
-- **The learning works.** 30% of the experts serve 80% of coding picks.
-- **But it isn't faster yet.** Inside llama.cpp, pinning those experts did not make it faster (20.3 vs 21–22 tok/s). It needs an engine where the CPU computes the cold experts while the GPU computes the hot ones, at the same time.
-- **Day 6, next:** that engine, built on [FreeToken](https://github.com/FlashML-org/FreeToken)'s hybrid CPU+GPU engine (FlashML-org/FreeToken, Apache-2.0), with our profile deciding which experts sit on the GPU.
+- **The learning works, and it's personal.** A profile from your own chat history: 30% of experts serve 79% of picks in new conversations (someone else's profile: 44%).
+- **Now it's faster (Day 6).** Profile + exclusive tiers + CPU-while-GPU (FreeToken's idea, ported into llama.cpp) + prompt-path fixes: 22.2 / 21.1 vs 17.7 / 15.7 tok/s decode and ~2× prompt speed over stock, on the kind of work the profile learned. Not bit-exact, and slower than stock on unlike text: re-profile when your work changes.
+- **Next:** the expert layer in Mojo (hot experts on the GPUs, cold on the CPU, one launch per layer), and a real coding-task quality test.
 - **Prior art.** Expert offloading, profile-driven placement, learned prefetch and router bias toward cached experts all have prior work, listed in [PRIOR_ART.md](PRIOR_ART.md). Our angle is narrower: a personal, per-task profile plus learned prediction, tested end to end on consumer hardware, and measured honestly, including what failed.
 
 ## Credits
@@ -165,5 +190,5 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 - **The Qwen team:** the model, its MTP draft head and the n-gram table.
 - **[llama.cpp and ggml](https://github.com/ggml-org/llama.cpp):** the engine every run used.
 - **[unsloth](https://huggingface.co/unsloth):** the GGUF quants.
-- **FlashML / FreeToken authors:** the hybrid CPU+GPU engine the next experiment builds on.
+- **FlashML / FreeToken authors** (and yuuki-net's FreeToken-Kai fork): the hybrid CPU+GPU executor whose idea Day 6 ported into llama.cpp.
 - **The prior-art authors** in [PRIOR_ART.md](PRIOR_ART.md): ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, ReMoE, DoMoE and the rest.

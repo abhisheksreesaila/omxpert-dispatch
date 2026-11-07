@@ -1,0 +1,82 @@
+{
+ "name": "pinxo_chat",
+ "base": "http://127.0.0.1:18081",
+ "model": "/home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+ "extra": {},
+ "npred": 128,
+ "t": "01:01:23",
+ "warm": [
+  11.13,
+  11.64,
+  15.43,
+  13.21,
+  9.63,
+  8.42,
+  17.26,
+  17.48
+ ],
+ "runs": [
+  {
+   "prompt_tokens": 554,
+   "completion_tokens": 128,
+   "ttft_s": 26.257,
+   "prefill_tok_s": 21.1,
+   "decode_tok_s": 20.63,
+   "round": 0,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 560,
+   "completion_tokens": 128,
+   "ttft_s": 20.059,
+   "prefill_tok_s": 27.9,
+   "decode_tok_s": 19.98,
+   "round": 0,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 546,
+   "completion_tokens": 128,
+   "ttft_s": 51.286,
+   "prefill_tok_s": 10.6,
+   "decode_tok_s": 17.36,
+   "round": 0,
+   "prompt": 2
+  },
+  {
+   "prompt_tokens": 554,
+   "completion_tokens": 128,
+   "ttft_s": 33.171,
+   "prefill_tok_s": 16.7,
+   "decode_tok_s": 17.34,
+   "round": 1,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 560,
+   "completion_tokens": 128,
+   "ttft_s": 24.988,
+   "prefill_tok_s": 22.4,
+   "decode_tok_s": 17.45,
+   "round": 1,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 546,
+   "completion_tokens": 128,
+   "ttft_s": 34.137,
+   "prefill_tok_s": 16.0,
+   "decode_tok_s": 25.64,
+   "round": 1,
+   "prompt": 2
+  }
+ ],
+ "decode_tok_s": 18.71,
+ "prefill_tok_s": 18.9,
+ "prompts": "chat",
+ "majflt": 7901008,
+ "majflt_per_token": 1932.7,
+ "stack_args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 34000 -lzm off",
+ "stack_env": "EDX_PIN=results/night6/pins/chat.bin EDX_PAGEOUT=1 EDX_XDEV=1 EDX_OVERLAP=1",
+ "pf_stats": "1 166143 441218970 426895212 51364260827\n2 0 0 0 0\n3 0 0 0 0\n4 0 0 0 0\n5 0 0 0 0\n"
+}

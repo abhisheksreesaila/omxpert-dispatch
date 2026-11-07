@@ -1,0 +1,33 @@
+{
+ "stack": "STACK=pinned omxpert/run.sh (chat profile pins 36,500 MiB, EDX_PAGEOUT, EDX_XDEV, EDX_OVERLAP, EDX_PREFILL_LOCAL; prefetch off, MTP off)",
+ "decode_tok_s": 21.65,
+ "prefill_tok_s": 210.2,
+ "baseline_decode_tok_s": 16.67,
+ "baseline_prefill_tok_s": 95.8,
+ "runs": {
+  "pinned": [
+   [
+    22.21,
+    218.1
+   ],
+   [
+    21.09,
+    202.4
+   ]
+  ],
+  "fit": [
+   [
+    17.66,
+    108.1
+   ],
+   [
+    15.68,
+    83.4
+   ]
+  ]
+ },
+ "method": "two interleaved pairs of servers (fit, pinned, fit, pinned), held-out chat prompts, server timings, 4 rounds x 3 prompts x 128 tokens",
+ "smoke_ok": true,
+ "smoke_first_request": "decode 2.7 tok/s, prompt 1.7 tok/s (first request after start: cold experts read from disk)",
+ "coding_prompts_caveat": "profile mismatch: on coding prompts the chat-profile stack ran 9.96 tok/s vs stock 14.88/13.82 (1 round each)"
+}

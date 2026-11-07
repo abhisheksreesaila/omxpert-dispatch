@@ -1,0 +1,89 @@
+{
+ "name": "baseline",
+ "base": "http://127.0.0.1:18081",
+ "model": "/home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+ "extra": {},
+ "npred": 128,
+ "t": "23:36:40",
+ "warm": [
+  14.22,
+  19.08,
+  18.59,
+  15.48,
+  19.09,
+  19.63,
+  18.39,
+  21.52,
+  20.66,
+  21.4
+ ],
+ "runs": [
+  {
+   "prompt_tokens": 510,
+   "completion_tokens": 128,
+   "ttft_s": 5.349,
+   "prefill_tok_s": 95.3,
+   "decode_tok_s": 18.07,
+   "text": "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\nexport function webhookFiltersMatch(\n  filters: ReadonlyArray<ScheduledTaskWebhookFilter>,\n  request: WebhookRequest,\n): boolean {\n  return findFailedWebhookFilter(filters, request) === null;\n}\nexport function webhookFilterSummary(\n  filters:",
+   "round": 0,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 514,
+   "completion_tokens": 128,
+   "ttft_s": 4.209,
+   "prefill_tok_s": 122.1,
+   "decode_tok_s": 21.05,
+   "text": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+   "round": 0,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 501,
+   "completion_tokens": 128,
+   "ttft_s": 3.9,
+   "prefill_tok_s": 128.4,
+   "decode_tok_s": 19.95,
+   "text": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull();\n    expect",
+   "round": 0,
+   "prompt": 2
+  },
+  {
+   "prompt_tokens": 510,
+   "completion_tokens": 128,
+   "ttft_s": 3.904,
+   "prefill_tok_s": 130.6,
+   "decode_tok_s": 22.21,
+   "text": "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\nexport function webhookFiltersMatch(\n  filters: ReadonlyArray<ScheduledTaskWebhookFilter>,\n  request: WebhookRequest,\n): boolean {\n  return findFailedWebhookFilter(filters, request) === null;\n}\nexport function webhookFilterSummary(\n  filters:",
+   "round": 1,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 514,
+   "completion_tokens": 128,
+   "ttft_s": 3.599,
+   "prefill_tok_s": 142.8,
+   "decode_tok_s": 20.3,
+   "text": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+   "round": 1,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 501,
+   "completion_tokens": 128,
+   "ttft_s": 5.749,
+   "prefill_tok_s": 87.1,
+   "decode_tok_s": 13.62,
+   "text": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull();\n    expect",
+   "round": 1,
+   "prompt": 2
+  }
+ ],
+ "decode_tok_s": 20.12,
+ "prefill_tok_s": 125.2,
+ "texts": {
+  "0": "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\nexport function webhookFiltersMatch(\n  filters: ReadonlyArray<ScheduledTaskWebhookFilter>,\n  request: WebhookRequest,\n): boolean {\n  return findFailedWebhookFilter(filters, request) === null;\n}\nexport function webhookFilterSummary(\n  filters:",
+  "1": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+  "2": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull();\n    expect"
+ }
+}

@@ -135,7 +135,7 @@ footer a { color: var(--acc); }
 <header class="top">
   <a class="brand" href="index.html" aria-label="omxpert dispatch, cover page"><span class="mark" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></span><span class="nm">omxpert dispatch</span><span class="rtag">Research</span></a>
   <nav class="pill" aria-label="Sections">
-    <a href="#idea">Idea</a><a href="#d1">Day 1</a><a href="#d2">Day 2</a><a href="#d3">Day 3</a><a href="#d4">Day 4</a><a href="#d5">Day 5</a><a href="#now">Where it stands</a><a href="#credits">Credits</a>
+    <a href="#idea">Idea</a><a href="#d1">Day 1</a><a href="#d2">Day 2</a><a href="#d3">Day 3</a><a href="#d4">Day 4</a><a href="#d5">Day 5</a><a href="#d6">Day 6</a><a href="#now">Where it stands</a><a href="#credits">Credits</a>
   </nav>
   <a class="get cta sm" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
 </header>
@@ -335,6 +335,39 @@ footer a { color: var(--acc); }
           </div>
         </div>
       </article>
+      <article class="day" id="d6">
+        <div class="dnum"><span class="k">Day</span><b>6</b><small>Nov 6–7<br>22:50–04:00</small></div>
+        <div class="card dcard rv">
+          <span class="k">🧬 The question</span>
+          <h3>Can we combine all three sets of tricks (0xSero's, FreeToken's, ours) into one engine that beats stock?</h3>
+          <p class="tried"><b>Tried.</b> A profile learned from the owner's own chat history, FreeToken's engine as is, then FreeToken's idea (the CPU computes cold experts while the GPU computes hot ones) ported into llama.cpp's scheduler, on top of 0xSero's exclusive tiers. Measured with interleaved servers on held-out chat prompts.</p>
+          <div class="outs">
+            <div class="out ok"><span class="ol">✅ Worked</span><ul>
+              <li><b>The combined stack beats stock llama.cpp:</b> 22.2 / 21.1 vs 17.7 / 15.7 tok/s decode, prompts 218 / 202 vs 108 / 83 (two interleaved pairs, the owner's chat prompts).</li>
+              <li><b>The profile is personal:</b> 30% of experts serve 79% of picks in new chat sessions; someone else's (coding) profile serves 44%. 2,000 tokens of history are enough.</li>
+              <li>Three prompt-path fixes took pinned mode from 3,148 page faults per token to 48.</li>
+              <li><code>omxpert/profile.sh</code> learns your experts from your own text; <code>STACK=pinned omxpert/run.sh</code> serves them.</li>
+            </ul></div>
+            <div class="out no"><span class="ol">❌ Failed</span><ul>
+              <li><b>FreeToken as is: 1.4 tok/s</b> on this 64 GB desktop. Its VRAM cache can only hold experts that are also in RAM, and only ~25 GB of RAM was free for them.</li>
+              <li>On text unlike the profile (coding prompts), the stack was slower than stock: 10.0 vs 14.9 / 13.8 tok/s (one round each).</li>
+              <li>MTP and layer-ahead prefetch on the stack: no gain. Hot/cold split for prompt batches: CUDA crash.</li>
+              <li>Not bit-exact: greedy text matches stock 49% word for word (another engine on the same model: 35%).</li>
+            </ul></div>
+            <div class="out back"><span class="ol">↩️ Retracted</span><ul>
+              <li><b>Night 5's "per-expert pinning doesn't pay inside llama.cpp":</b> it was a prompt-path bug (GPU 1's pinned experts re-read from disk), not a property of pinning.</li>
+              <li>Overlap looked like +21% in separate runs; the same-server A/B says +2–5%.</li>
+            </ul></div>
+          </div>
+          <div class="lesson"><span class="k">💡 The lesson</span><p>The lever is <i>which</i> experts sit in VRAM, and that has to be learned from your own work. Running the CPU and GPU at once matters little once the profile is right. And an engine built for 128 GB of RAM can lose 15× on 64 GB: measure on the box you have.</p></div>
+          <div class="files"><span class="fl">📄 Lab notes</span>
+            <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/logs/report_night6.md">report_night6.md</a>
+            <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/logs/journal_night6.md">journal_night6.md</a>
+            <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/logs/decisions_night6.md">decisions_night6.md</a>
+            <a class="more" href="night6_before_after.html">before / after</a>
+          </div>
+        </div>
+      </article>
 
     </div>
   </section>
@@ -344,9 +377,9 @@ footer a { color: var(--acc); }
     <h2 class="rv">The honest state, <span class="two">in plain words.</span></h2>
     <div class="now">
       <div class="card us rv"><div class="n">~21–24<small>tok/s decode</small></div><h3>It runs, exactly</h3><p>Qwen3.8-Flash-Next (Qwen 4 preview architecture, 111 GB at 4-bit) runs bit-exact on 2× RTX 3090 + 64 GB RAM at ~21–24 tok/s decode in llama.cpp.</p></div>
-      <div class="card rv"><div class="n">30% → 80%</div><h3>The learning works</h3><p>30% of the experts serve 80% of coding picks. Your work really does keep waking the same few.</p></div>
-      <div class="card rv"><div class="n bad">20.3 vs 21–22<small>tok/s</small></div><h3>But it isn't faster yet</h3><p>Inside llama.cpp, pinning those experts did not make it faster. It needs an engine where the CPU computes the cold experts while the GPU computes the hot ones, at the same time.</p></div>
-      <div class="card us rv"><span class="k">Day 6 · next</span><h3>That engine</h3><p>The next experiment builds it on <a href="https://github.com/FlashML-org/FreeToken">FreeToken</a>'s hybrid CPU+GPU engine (FlashML-org/FreeToken, Apache-2.0), with our profile deciding which experts sit on the GPU.</p></div>
+      <div class="card rv"><div class="n">30% → 79%</div><h3>The learning works, and it's personal</h3><p>A profile from your own chat history: 30% of the experts serve 79% of picks in new conversations. Someone else's profile: 44%.</p></div>
+      <div class="card us rv"><div class="n">22.2 vs 17.7<small>tok/s decode, ~2× prompts</small></div><h3>Now it's faster (Day 6)</h3><p>Your profile + exclusive tiers + CPU-while-GPU (FreeToken's idea, ported into llama.cpp) + prompt-path fixes beat stock on the kind of work the profile learned. Not bit-exact, and slower than stock on unlike text: re-profile when your work changes.</p></div>
+      <div class="card us rv"><span class="k">Next</span><h3>The expert layer in Mojo</h3><p>Hot experts on the GPUs, cold on the CPU, one launch per layer, where llama.cpp's split scheduling and its &gt;8-token kernel crash go away. Plus a real coding-task quality test.</p></div>
     </div>
     <div class="card rv" style="margin-top:16px"><span class="k">Prior art</span><h3>Much of this has been done before</h3><p>Expert offloading, profile-driven placement, learned prefetch and router bias toward cached experts all have prior work, listed in <a href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">PRIOR_ART.md</a>. Our angle is narrower: a personal, per-task profile plus learned prediction, tested end to end on consumer hardware, and measured honestly, including what failed.</p></div>
   </section>
@@ -365,7 +398,7 @@ footer a { color: var(--acc); }
       <div class="cl">
         <div class="card rv"><span class="k">Model</span><h3>The Qwen team</h3><p>The model, its MTP draft head and the n-gram table.</p></div>
         <div class="card rv"><span class="k">Engine and files</span><h3>llama.cpp / ggml and unsloth</h3><p><a href="https://github.com/ggml-org/llama.cpp">llama.cpp and ggml</a>, the engine every run used. <a href="https://huggingface.co/unsloth">unsloth</a>, for the GGUF quants.</p></div>
-        <div class="card rv"><span class="k">Day 6</span><h3>FlashML / FreeToken authors</h3><p>The hybrid CPU+GPU engine the next experiment builds on.</p></div>
+        <div class="card rv"><span class="k">Day 6</span><h3>FlashML / FreeToken authors</h3><p>The hybrid CPU+GPU executor (and yuuki-net's FreeToken-Kai fork) whose idea Day 6 ported into llama.cpp.</p></div>
         <div class="card rv"><span class="k">Prior art</span><h3>The researchers before us</h3><p>Every author in <a href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">PRIOR_ART.md</a>: ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, ReMoE, DoMoE and the rest.</p></div>
       </div>
     </div>

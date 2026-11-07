@@ -1,0 +1,36 @@
+{
+ "stack_args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 36500 -lzm off",
+ "stack_env": "EDX_PIN=results/night6/pins/chat.bin EDX_PAGEOUT=1 EDX_XDEV=1 EDX_OVERLAP=1 EDX_PREFILL_LOCAL=1",
+ "prompts": "coding",
+ "load_s": 243,
+ "warm": [
+  9.43,
+  8.02,
+  15.09,
+  5.03
+ ],
+ "arms": {
+  "base": {
+   "extra": {},
+   "median_tok_s": 9.96,
+   "prefill_median": 29.1,
+   "paired_ratios": [
+    1.0
+   ],
+   "vs_base": 1.0
+  }
+ },
+ "rounds": [
+  {
+   "base": 10.083333333333334
+  }
+ ],
+ "base_arm": "base",
+ "texts": {
+  "base": {
+   "0": ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+   "1": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceCount: 0,\n    providerInstanceSummaries: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> =",
+   "2": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull"
+  }
+ }
+}

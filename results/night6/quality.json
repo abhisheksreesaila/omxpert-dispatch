@@ -1,0 +1,127 @@
+{
+ "reference": "stock llama.cpp fit, -lzm off (q_fit_a), 3 held-out coding prompts x 128 greedy tokens",
+ "floor_exact": {
+  "per_prompt": {
+   "0": {
+    "same_prefix_chars": 252,
+    "len": [
+     252,
+     252
+    ],
+    "word_match": 1.0
+   },
+   "1": {
+    "same_prefix_chars": 396,
+    "len": [
+     396,
+     396
+    ],
+    "word_match": 1.0
+   },
+   "2": {
+    "same_prefix_chars": 491,
+    "len": [
+     491,
+     491
+    ],
+    "word_match": 1.0
+   }
+  },
+  "word_match": 1.0
+ },
+ "floor": {
+  "per_prompt": {
+   "0": {
+    "same_prefix_chars": 0,
+    "len": [
+     252,
+     487
+    ],
+    "word_match": 0.02
+   },
+   "1": {
+    "same_prefix_chars": 78,
+    "len": [
+     396,
+     435
+    ],
+    "word_match": 0.222
+   },
+   "2": {
+    "same_prefix_chars": 88,
+    "len": [
+     491,
+     513
+    ],
+    "word_match": 0.812
+   }
+  },
+  "word_match": 0.351
+ },
+ "floor_note": "greedy text diverges at the first close call under any change of arithmetic; FreeToken is the same model with other kernels",
+ "pinned_stack": {
+  "per_prompt": {
+   "0": {
+    "same_prefix_chars": 0,
+    "len": [
+     252,
+     244
+    ],
+    "word_match": 0.036
+   },
+   "1": {
+    "same_prefix_chars": 266,
+    "len": [
+     396,
+     394
+    ],
+    "word_match": 0.611
+   },
+   "2": {
+    "same_prefix_chars": 88,
+    "len": [
+     491,
+     513
+    ],
+    "word_match": 0.812
+   }
+  },
+  "word_match": 0.486
+ },
+ "pinned_steer05": {
+  "per_prompt": {
+   "0": {
+    "same_prefix_chars": 0,
+    "len": [
+     252,
+     305
+    ],
+    "word_match": 0.771
+   },
+   "1": {
+    "same_prefix_chars": 266,
+    "len": [
+     396,
+     391
+    ],
+    "word_match": 0.611
+   },
+   "2": {
+    "same_prefix_chars": 8,
+    "len": [
+     491,
+     516
+    ],
+    "word_match": 0.212
+   }
+  },
+  "word_match": 0.531
+ },
+ "token_match": {
+  "floor_exact": 1.0,
+  "floor": 0.351,
+  "pinned_stack": 0.486,
+  "pinned_steer05": 0.531
+ },
+ "verdict": "not bit-exact; diverges from stock about as much as another engine on the same model does (weak test: 3 prompts x 128 tokens)"
+}

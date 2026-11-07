@@ -1,0 +1,73 @@
+{
+ "stack_args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 36500 -lzm off",
+ "stack_env": "EDX_PIN=results/night6/pins/chat.bin EDX_PAGEOUT=1 EDX_XDEV=1 EDX_OVERLAP=1 EDX_OVERLAP_CTL=/tmp/n6ov.ctl EDX_PREFILL_LOCAL=1",
+ "prompts": "chat",
+ "load_s": 199,
+ "warm": [
+  9.22,
+  14.79,
+  18.3,
+  13.93,
+  18.53,
+  0.0,
+  17.3,
+  20.75
+ ],
+ "arms": {
+  "on": {
+   "extra": {},
+   "median_tok_s": 24.42,
+   "prefill_median": 221.9,
+   "paired_ratios": [
+    0.701,
+    1.07,
+    1.019,
+    1.103,
+    1.023,
+    1.067
+   ],
+   "vs_off": 1.009
+  },
+  "off": {
+   "extra": {},
+   "median_tok_s": 24.21,
+   "prefill_median": 219.5,
+   "paired_ratios": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "vs_off": 1.0
+  }
+ },
+ "rounds": [
+  {
+   "on": 18.46666666666667,
+   "off": 26.326666666666668
+  },
+  {
+   "off": 24.06,
+   "on": 25.75
+  },
+  {
+   "on": 25.54,
+   "off": 25.060000000000002
+  },
+  {
+   "off": 24.776666666666667,
+   "on": 27.326666666666668
+  },
+  {
+   "on": 23.316666666666666,
+   "off": 22.78333333333333
+  },
+  {
+   "off": 21.766666666666666,
+   "on": 23.226666666666667
+  }
+ ],
+ "base_arm": "off"
+}

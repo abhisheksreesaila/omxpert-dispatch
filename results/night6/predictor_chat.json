@@ -1,0 +1,34 @@
+{
+ "model": "Qwen3.8-Flash-Next",
+ "train_tokens": 66135,
+ "heldout_tokens": 26915,
+ "L": 48,
+ "E": 512,
+ "K": 10,
+ "recall": {
+  "10": {
+   "profile": 0.126,
+   "prev": 0.298,
+   "markov": 0.335,
+   "both": 0.371
+  },
+  "16": {
+   "profile": 0.179,
+   "prev": 0.298,
+   "markov": 0.445,
+   "both": 0.491
+  },
+  "24": {
+   "profile": 0.238,
+   "prev": 0.298,
+   "markov": 0.541,
+   "both": 0.602
+  },
+  "32": {
+   "profile": 0.285,
+   "prev": 0.298,
+   "markov": 0.61,
+   "both": 0.676
+  }
+ }
+}

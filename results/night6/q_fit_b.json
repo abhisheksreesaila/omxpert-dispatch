@@ -1,0 +1,36 @@
+{
+ "stack_args": "-lzm off",
+ "stack_env": "",
+ "prompts": "coding",
+ "load_s": 177,
+ "warm": [
+  10.62,
+  10.94,
+  11.3,
+  14.77
+ ],
+ "arms": {
+  "base": {
+   "extra": {},
+   "median_tok_s": 13.82,
+   "prefill_median": 74.1,
+   "paired_ratios": [
+    1.0
+   ],
+   "vs_base": 1.0
+  }
+ },
+ "rounds": [
+  {
+   "base": 13.88
+  }
+ ],
+ "base_arm": "base",
+ "texts": {
+  "base": {
+   "0": "null;\n  for (const [index, filter] of filters.entries()) {\n    const value = webhookExpressionResolver.resolve(filter.path, request);\n    if (!matchesWebhookFilter(filter, value)) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n",
+   "1": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  id: string,\n  environmentId: EnvironmentId,\n  overrides: Partial<SidebarProjectSnapshot> = {},\n): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    providerInstanceIds: [],\n    ...overrides,\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {",
+   "2": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, faviconPath: \"second.svg\" };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, faviconPath: \"third.svg\" };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull();\n    expect"
+  }
+ }
+}

@@ -1,0 +1,182 @@
+{
+ "tricks": {
+  "freetoken_hybrid": {
+   "status": "measured",
+   "from": "FreeToken (FlashML), CPU computes misses while the GPU computes hits",
+   "engine_as_is": {
+    "freetoken_kai_tok_s": 1.37,
+    "freetoken_prefill": 17.3,
+    "llamacpp_tok_s": 20.12,
+    "llamacpp_prefill": 125.2,
+    "why": "64 GB desktop: ~25 GB of RAM free for its expert bank, VRAM cache can only hold RAM-resident experts, most picks fault in from NVMe"
+   },
+   "ported_to_llamacpp": {
+    "on": 24.42,
+    "off": 24.21
+   },
+   "paired": [
+    0.701,
+    1.07,
+    1.019,
+    1.103,
+    1.023,
+    1.067
+   ],
+   "note": "in-process A/B, order alternated; round 0 is the cold first round"
+  },
+  "profile_residency": {
+   "status": "measured",
+   "from": "omxpert: profile from the owner's chat history picks the VRAM experts",
+   "vs": {
+    "fit_tok_s": [
+     17.66,
+     15.68
+    ],
+    "pinned_stack_tok_s": [
+     22.21,
+     21.09
+    ],
+    "fit_prefill": [
+     108.1,
+     83.4
+    ],
+    "pinned_prefill": [
+     218.1,
+     202.4
+    ]
+   },
+   "reason": null,
+   "note": "separate servers interleaved fit, pinned, fit, pinned; same prompts (held-out chat sessions) and server timings"
+  },
+  "layer_ahead_prefetch": {
+   "status": "measured",
+   "from": "0xSero (layer-ahead), our CPU-side reader",
+   "paired": [
+    0.941,
+    1.125,
+    1.258,
+    0.961,
+    0.902,
+    0.975,
+    1.053,
+    1.049
+   ],
+   "vs": {
+    "pfprev": [
+     20.63,
+     19.74
+    ],
+    "pfoff": [
+     22.21,
+     21.09
+    ]
+   },
+   "reason": null,
+   "note": "previous token's cold picks of the next layer, madvise WILLNEED by 8 reader threads"
+  },
+  "predictor_prefetch": {
+   "status": "not_built",
+   "from": "omxpert learned guesser + Fate's cross-layer gate idea",
+   "offline": {
+    "model": "Qwen3.8-Flash-Next",
+    "train_tokens": 66135,
+    "heldout_tokens": 26915,
+    "L": 48,
+    "E": 512,
+    "K": 10,
+    "recall": {
+     "10": {
+      "profile": 0.126,
+      "prev": 0.298,
+      "markov": 0.335,
+      "both": 0.371
+     },
+     "16": {
+      "profile": 0.179,
+      "prev": 0.298,
+      "markov": 0.445,
+      "both": 0.491
+     },
+     "24": {
+      "profile": 0.238,
+      "prev": 0.298,
+      "markov": 0.541,
+      "both": 0.602
+     },
+     "32": {
+      "profile": 0.285,
+      "prev": 0.298,
+      "markov": 0.61,
+      "both": 0.676
+     }
+    }
+   },
+   "reason": "learned table guesses pinned experts too and would pull their RAM back (pinned mode pages them out); needs a pin filter in ggml-cpu. Offline on chat: 44.5% of next-layer picks with 16 guesses (49.1% with recency). Cross-layer gate needs hidden states in the CPU op (not built)."
+  },
+  "read_pool": {
+   "status": "measured",
+   "from": "0xSero",
+   "paired": [
+    0.941,
+    1.125,
+    1.258,
+    0.961,
+    0.902,
+    0.975,
+    1.053,
+    1.049
+   ],
+   "reason": null,
+   "note": "the reader pool only does work when prefetch is on: same arm as layer_ahead_prefetch"
+  },
+  "mtp": {
+   "status": "measured",
+   "from": "Qwen / llama.cpp",
+   "paired": [
+    0.787,
+    0.922,
+    1.302,
+    1.068
+   ],
+   "vs": {
+    "mtp": 21.74,
+    "nomtp": 23.0,
+    "mtp_prefill": 149.8
+   },
+   "reason": null,
+   "note": "pinned stack with 33 GB of pins (the draft head takes VRAM)"
+  },
+  "staged_prefill": {
+   "status": "not_built",
+   "from": "0xSero",
+   "reason": "night 5 measured no gain on ~550-token prompts (22.9/149 vs 22.6/150); tonight's prompt fix is per-layer placement (EDX_PREFILL_LOCAL) instead"
+  },
+  "exclusive_tiers": {
+   "status": "measured",
+   "from": "0xSero (exclusive VRAM/RAM tiers) + fixes tonight",
+   "vs": {
+    "night5_code_tok_s": 8.88,
+    "night5_code_prefill": 9.8,
+    "night5_code_flt": 3148.2,
+    "xdev_tok_s": 15.4,
+    "xdev_prefill": 21.2,
+    "xdev_flt": 188.9,
+    "xdev_overlap_local_tok_s": 21.21,
+    "xdev_overlap_local_prefill": 92.8,
+    "xdev_overlap_local_flt": 47.6
+   },
+   "reason": null,
+   "note": "separate runs, chat prompts, client timings; pinned experts' RAM is given back (EDX_PAGEOUT)"
+  },
+  "steering": {
+   "status": "measured",
+   "from": "omxpert (swap a pick for a VRAM expert; Skliar et al.'s cache-conditional routing)",
+   "vs": {
+    "steer05_tok_s": 16.88,
+    "pinned_tok_s": 9.96
+   },
+   "reason": null,
+   "note": "lossy: quality in quality.json"
+  }
+ }
+}

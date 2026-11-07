@@ -1,0 +1,92 @@
+{
+ "name": "ft_stock",
+ "base": "http://127.0.0.1:18091",
+ "model": "Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+ "extra": {},
+ "npred": 128,
+ "t": "23:52:19",
+ "warm": [
+  1.17,
+  2.1,
+  1.62,
+  0.86,
+  2.36,
+  1.49,
+  1.6,
+  2.32,
+  3.93,
+  2.47
+ ],
+ "runs": [
+  {
+   "prompt_tokens": 510,
+   "completion_tokens": 128,
+   "ttft_s": 26.996,
+   "prefill_tok_s": 18.9,
+   "decode_tok_s": 1.31,
+   "text": ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n<|endoftext|>import { z } from \"zod\";\n\nimport {\n  ScheduledTaskWebhookFilterSchema,\n  type ScheduledTaskWebhookFilter,\n} from \"@t3tools/contracts\";\n\nimport { webhookExpressionResolver, type WebhookRequest } from \"./webhookTemplate.ts\";\n\nexport",
+   "round": 0,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 514,
+   "completion_tokens": 128,
+   "ttft_s": 32.793,
+   "prefill_tok_s": 15.7,
+   "decode_tok_s": 1.88,
+   "text": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  members: SidebarProjectGroupMember[],\n  selectedProjectId: ProjectId | null,\n): SidebarProjectSnapshot {\n  return {\n    members,\n    selectedProjectId,\n    selectedProject: members.find((item) => item.id === selectedProjectId) ?? null,\n    selectedProjectEnvironment:\n      environments.find(\n        (environment) => environment.environmentId === members[0",
+   "round": 0,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 501,
+   "completion_tokens": 128,
+   "ttft_s": 36.937,
+   "prefill_tok_s": 13.6,
+   "decode_tok_s": 1.12,
+   "text": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull",
+   "round": 0,
+   "prompt": 2
+  },
+  {
+   "prompt_tokens": 510,
+   "completion_tokens": 128,
+   "ttft_s": 38.761,
+   "prefill_tok_s": 13.2,
+   "decode_tok_s": 1.43,
+   "text": ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n<|endoftext|>import { z } from \"zod\";\n\nimport {\n  SCHEDULED_TASK_WEBHOOK_FILTER_OPS,\n  SCHEDULED_TASK_WEBHOOK_FILTER_PATH,\n  SCHEDULED_TASK_WEBHOOK_FILTER_VALUE_MAX_LENGTH,\n  SCHEDULED_TASK_WEBHOOK_FILTER_VALUE_MAX_VALUES,",
+   "round": 1,
+   "prompt": 0
+  },
+  {
+   "prompt_tokens": 514,
+   "completion_tokens": 128,
+   "ttft_s": 5.684,
+   "prefill_tok_s": 90.4,
+   "decode_tok_s": 1.24,
+   "text": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction project(id: string, environmentId: EnvironmentId): SidebarProjectSnapshot {\n  return {\n    ...member(id, environmentId),\n    members: [member(id, environmentId)],\n  };\n}\n\nfunction search(overrides: Partial<SettingsScopeSearch> = {}): SettingsScopeSearch {\n  return {\n    scope: \"global\",\n    environmentId: null,\n    projectId: null,",
+   "round": 1,
+   "prompt": 1
+  },
+  {
+   "prompt_tokens": 501,
+   "completion_tokens": 128,
+   "ttft_s": 18.243,
+   "prefill_tok_s": 27.5,
+   "decode_tok_s": 2.15,
+   "text": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull",
+   "round": 1,
+   "prompt": 2
+  }
+ ],
+ "decode_tok_s": 1.37,
+ "prefill_tok_s": 17.3,
+ "texts": {
+  "0": ";\n  const resolved = webhookExpressionResolver(request);\n  for (const [index, filter] of filters.entries()) {\n    if (!matchesWebhookFilter(filter, resolved(filter.path))) {\n      return { index, path: filter.path };\n    }\n  }\n  return null;\n}\n<|endoftext|>import { z } from \"zod\";\n\nimport {\n  ScheduledTaskWebhookFilterSchema,\n  type ScheduledTaskWebhookFilter,\n} from \"@t3tools/contracts\";\n\nimport { webhookExpressionResolver, type WebhookRequest } from \"./webhookTemplate.ts\";\n\nexport",
+  "1": "00Z\",\n    updatedAt: \"2026-09-07T00:00:00.000Z\",\n  };\n}\n\nfunction snapshot(\n  members: SidebarProjectGroupMember[],\n  selectedProjectId: ProjectId | null,\n): SidebarProjectSnapshot {\n  return {\n    members,\n    selectedProjectId,\n    selectedProject: members.find((item) => item.id === selectedProjectId) ?? null,\n    selectedProjectEnvironment:\n      environments.find(\n        (environment) => environment.environmentId === members[0",
+  "2": "estimate()).toBe(0);\n    expect(records.size).toBe(0);\n\n    const second = { ...target, environmentId: EnvironmentId.make(\"second\") };\n    await cache.resolve(second, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n\n    const third = { ...target, environmentId: EnvironmentId.make(\"third\") };\n    await cache.resolve(third, url, signal());\n    expect(cache.estimate()).toBe(image.length);\n    expect(records.size).toBe(1);\n    expect(cache.peek(second)).toBeNull"
+ },
+ "engine": "freetoken-kai",
+ "smoke_ok": true,
+ "flags": "--moe-strategy hybrid --pp-size 2 --moe-bank-ram auto (25.19G, 179/512 resident, checkpoint order)"
+}

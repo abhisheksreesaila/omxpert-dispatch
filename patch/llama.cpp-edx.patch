@@ -13,6 +13,84 @@ index e6290ea..09513ac 100644
  
      // dflash/dspark decode the whole noise block in a single pass and sample every block position on the backend
      // TODO: refactor such properties to be announced by the speculative types
+diff --git i/ggml/src/ggml-backend.cpp w/ggml/src/ggml-backend.cpp
+index 3520b43..a51067a 100644
+--- i/ggml/src/ggml-backend.cpp
++++ w/ggml/src/ggml-backend.cpp
+@@ -2128,6 +2128,24 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
+ 
+     int prev_backend_id = -1;
+ 
++    // EDX_OVERLAP: when a device split is followed by a CPU split that reads nothing the device split computes, copy the
++    // CPU split's inputs before the device split is queued; the CPU then computes while the device works (CPU works while
++    // the GPU works, after FreeToken's hybrid executor and 0xSero's overlap). Without it the input copy waits for the device.
++    // EDX_OVERLAP_CTL=<file>: '1' or '0' in the file switches the overlap at run time (re-read every 16 graphs), for A/B tests in one server
++    static const bool edx_overlap_env = getenv("EDX_OVERLAP") != nullptr;
++    static const char * edx_overlap_ctl = getenv("EDX_OVERLAP_CTL");
++    static bool edx_overlap = edx_overlap_env;
++    static int  edx_overlap_calls = 0;
++    if (edx_overlap_env && edx_overlap_ctl != nullptr && (edx_overlap_calls++ % 16) == 0) {
++        FILE * f = fopen(edx_overlap_ctl, "r");
++        if (f != nullptr) {
++            edx_overlap = fgetc(f) == '1';
++            fclose(f);
++        }
++    }
++    const int cpu_backend_id = sched->n_backends - 1;
++    bool inputs_ready = false; // this split's inputs were copied early
++
+     for (int split_id = 0; split_id < sched->n_splits; split_id++) {
+         struct ggml_backend_sched_split * split = &splits[split_id];
+         int split_backend_id = split->backend_id;
+@@ -2145,14 +2163,42 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
+ 
+         // copy the input tensors to the split backend
+         // the weights in host memory are copied last, so that the copy callback can read the other inputs of the split
+-        for (int input_id = 0; input_id < split->n_inputs; input_id++) {
+-            if (!ggml_backend_sched_is_host_weight(split->inputs[input_id])) {
+-                ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);
++        if (!inputs_ready) {
++            for (int input_id = 0; input_id < split->n_inputs; input_id++) {
++                if (!ggml_backend_sched_is_host_weight(split->inputs[input_id])) {
++                    ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);
++                }
++            }
++            for (int input_id = 0; input_id < split->n_inputs; input_id++) {
++                if (ggml_backend_sched_is_host_weight(split->inputs[input_id])) {
++                    ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);
++                }
+             }
+         }
+-        for (int input_id = 0; input_id < split->n_inputs; input_id++) {
+-            if (ggml_backend_sched_is_host_weight(split->inputs[input_id])) {
+-                ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);
++        inputs_ready = false;
++
++        if (edx_overlap && !sched->callback_eval && split_backend_id != cpu_backend_id && split_id + 1 < sched->n_splits) {
++            struct ggml_backend_sched_split * next = &splits[split_id + 1];
++            bool indep = next->backend_id == cpu_backend_id && next->n_inputs > 0;
++            for (int j = 0; indep && j < next->n_inputs; j++) {
++                const struct ggml_tensor * in = next->inputs[j];
++                if (ggml_backend_sched_is_host_weight(in)) {
++                    indep = false; // the copy callback reads the split's other inputs: keep the normal order
++                    break;
++                }
++                for (int k = 0; k < split->graph.n_nodes; k++) {
++                    const struct ggml_tensor * nd = split->graph.nodes[k];
++                    if (in == nd || in->view_src == nd) {
++                        indep = false;
++                        break;
++                    }
++                }
++            }
++            if (indep) {
++                for (int j = 0; j < next->n_inputs; j++) {
++                    ggml_backend_sched_copy_input(sched, next, next->inputs[j]);
++                }
++                inputs_ready = true;
+             }
+         }
+ 
 diff --git i/ggml/src/ggml-cpu/CMakeLists.txt w/ggml/src/ggml-cpu/CMakeLists.txt
 index 8327c52..10681de 100644
 --- i/ggml/src/ggml-cpu/CMakeLists.txt
@@ -25,6 +103,258 @@ index 8327c52..10681de 100644
          ggml-cpu/repack.cpp
          ggml-cpu/repack.h
          ggml-cpu/hbm.cpp
+diff --git i/ggml/src/ggml-cpu/edx-prefetch.cpp w/ggml/src/ggml-cpu/edx-prefetch.cpp
+new file mode 100644
+index 0000000..1aa69b4
+--- /dev/null
++++ w/ggml/src/ggml-cpu/edx-prefetch.cpp
+@@ -0,0 +1,246 @@
++// Expert Dispatch (night 5): read pool + layer-ahead prefetch for MoE experts that live in mmap'd RAM/SSD.
++// Ideas from 0xSero's glm-flash-lite (a pool of parallel readers; start the next layer's reads before it runs),
++// rebuilt for llama.cpp's CPU expert path. Exact: it only warms the page cache, the math is unchanged.
++//
++// EDX_PF_MODE (unset = off):
++//   stats  : measure only. For every CPU expert op, how much of the picked experts was already in RAM (mincore).
++//   same   : when a layer's first expert op runs, hand the same experts' other matrices (up/down) to the read pool.
++//   prev   : same + next layer's experts guessed from the previous token's picks at that layer.
++//   markov : same + next layer's experts guessed by a learned table (this layer's picks -> next layer's), EDX_PF_PRED=<file>.
++//   both   : prev + markov.
++// EDX_PF_THREADS (8): readers. EDX_PF_N (16): next-layer experts to fetch per token.
++// EDX_PF_CTL=<file>: the mode is re-read from this file every 64 ops, so one warmed server can A/B modes in turn
++//   (separate server runs swing 11-19 tok/s on this box from page-cache state alone); per-mode stats go to <file>.stats.
++// EDX_PF_IO: advise (default: madvise WILLNEED, the kernel reads the range in large requests) or touch (one byte per page).
++// Learned table file: int32 L, E, M, then int16 succ[L-1][E][M] (most frequent next-layer experts for each expert).
++#include "ggml.h"
++
++#include <sys/mman.h>
++#include <unistd.h>
++#include <time.h>
++
++#include <atomic>
++#include <condition_variable>
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <deque>
++#include <mutex>
++#include <string>
++#include <thread>
++#include <vector>
++
++namespace {
++
++enum { KIND_GATE, KIND_UP, KIND_DOWN, KIND_GATE_UP, N_KIND };
++constexpr int MAX_LAYERS = 256;
++
++struct mat { const char * data = nullptr; size_t nb02 = 0; int64_t ne02 = 0; };
++
++struct state {
++    int mode = -1;   // 0 off, 1 stats, 2 same, 3 prev, 4 markov, 5 both
++    int n_pred = 16;
++    mat mats[MAX_LAYERS][N_KIND];
++    std::vector<int32_t> last[MAX_LAYERS];   // previous token's picks per layer
++    int last_layer_seen = -1;
++    int32_t L = 0, E = 0, M = 0;
++    std::vector<int16_t> succ;
++    // read pool
++    std::mutex mu;
++    std::condition_variable cv;
++    std::deque<std::pair<const char *, size_t>> q;
++    std::vector<std::thread> workers;
++    // stats
++    std::atomic<long long> pages_total{0}, pages_res{0}, ops{0}, jobs{0};
++    long long m_total[6] = {0}, m_res[6] = {0}, m_ops[6] = {0}, m_ns[6] = {0};
++    long long t_start = 0; int t_mode = 0;
++    const char * ctl = nullptr;
++    bool touch = false;
++    bool workers_started = false;
++    std::vector<unsigned char> vec;
++};
++
++state S;
++
++void report() {
++    if (S.mode >= 1 && S.pages_total > 0) {
++        long long ns = 0; for (int i = 0; i < 6; ++i) ns += S.m_ns[i];
++        fprintf(stderr, "EDX_PF mode=%d ops=%lld picked_pages=%lld resident_at_use=%.4f prefetch_jobs=%lld cpu_expert_ms=%.1f\n",
++                S.mode, S.ops.load(), S.pages_total.load(), (double) S.pages_res / S.pages_total, S.jobs.load(), ns / 1e6);
++    }
++}
++
++void worker() {
++    for (;;) {
++        std::pair<const char *, size_t> j;
++        {
++            std::unique_lock<std::mutex> lk(S.mu);
++            S.cv.wait(lk, [] { return !S.q.empty(); });
++            j = S.q.front(); S.q.pop_front();
++        }
++        // touch one byte per page: synchronous faults in parallel across readers = a deep read queue on the SSD
++        // (madvise WILLNEED alone goes through readahead, which the mmap's MADV_RANDOM hint limits)
++        if (S.touch) {
++            volatile char sink = 0;
++            for (size_t off = 0; off < j.second; off += 4096) {
++                sink += j.first[off];
++            }
++            (void) sink;
++        } else {
++            const uintptr_t pg = 4096, a = (uintptr_t) j.first & ~(pg - 1);
++            madvise((void *) a, (uintptr_t) j.first + j.second - a, MADV_WILLNEED);
++        }
++    }
++}
++
++int parse_mode(const char * m) {
++    if (!strncmp(m, "stats", 5))  return 1;
++    if (!strncmp(m, "same", 4))   return 2;
++    if (!strncmp(m, "prev", 4))   return 3;
++    if (!strncmp(m, "markov", 6)) return 4;
++    if (!strncmp(m, "both", 4))   return 5;
++    return 1;   // "off" under a control file still measures
++}
++
++void start_workers() {
++    if (S.workers_started) return;
++    S.workers_started = true;
++    const int nt = getenv("EDX_PF_THREADS") ? atoi(getenv("EDX_PF_THREADS")) : 8;
++    for (int i = 0; i < nt; ++i) { S.workers.emplace_back(worker); S.workers.back().detach(); }
++}
++
++void poll_ctl() {
++    char buf[32] = {0};
++    FILE * f = fopen(S.ctl, "r");
++    if (f) { if (fgets(buf, sizeof(buf), f)) S.mode = parse_mode(buf); fclose(f); }
++    if (S.mode >= 2) start_workers();
++    std::string sp = std::string(S.ctl) + ".stats";
++    FILE * o = fopen(sp.c_str(), "w");
++    if (o) {
++        for (int i = 1; i < 6; ++i) fprintf(o, "%d %lld %lld %lld %lld\n", i, S.m_ops[i], S.m_total[i], S.m_res[i], S.m_ns[i]);
++        fclose(o);
++    }
++}
++
++void init() {
++    const char * m = getenv("EDX_PF_MODE");
++    S.ctl = getenv("EDX_PF_CTL");
++    S.touch = getenv("EDX_PF_IO") && !strcmp(getenv("EDX_PF_IO"), "touch");
++    S.mode = 0;
++    if (S.ctl) m = "stats";
++    if (!m) return;
++    S.mode = parse_mode(m);
++    if (getenv("EDX_PF_N")) S.n_pred = atoi(getenv("EDX_PF_N"));
++    if (S.mode >= 4 || S.ctl) {
++        const char * p = getenv("EDX_PF_PRED");
++        FILE * f = p ? fopen(p, "rb") : nullptr;
++        if (f && fread(&S.L, 4, 1, f) == 1 && fread(&S.E, 4, 1, f) == 1 && fread(&S.M, 4, 1, f) == 1) {
++            S.succ.resize((size_t) (S.L - 1) * S.E * S.M);
++            if (fread(S.succ.data(), 2, S.succ.size(), f) != S.succ.size()) S.succ.clear();
++        }
++        if (f) fclose(f);
++        fprintf(stderr, "EDX_PF learned table %s: L=%d E=%d M=%d %s\n", p ? p : "(none)", S.L, S.E, S.M, S.succ.empty() ? "MISSING" : "ok");
++    }
++    if (S.mode >= 2) start_workers();
++    if (S.ctl) poll_ctl();
++    atexit(report);
++}
++
++int kind_of(const char * name, int * layer) {
++    if (sscanf(name, "blk.%d.", layer) != 1 || *layer < 0 || *layer >= MAX_LAYERS) return -1;
++    if (strstr(name, "ffn_gate_up_exps")) return KIND_GATE_UP;
++    if (strstr(name, "ffn_gate_exps"))    return KIND_GATE;
++    if (strstr(name, "ffn_up_exps"))      return KIND_UP;
++    if (strstr(name, "ffn_down_exps"))    return KIND_DOWN;
++    return -1;
++}
++
++void enqueue(int layer, int e, int skip_kind) {
++    std::lock_guard<std::mutex> lk(S.mu);
++    for (int k = 0; k < N_KIND; ++k) {
++        const mat & mm = S.mats[layer][k];
++        if (k == skip_kind || !mm.data || e < 0 || e >= mm.ne02) continue;
++        if (S.q.size() > 4096) return;   // readers are behind: drop guesses rather than queue stale work
++        S.q.emplace_back(mm.data + (size_t) e * mm.nb02, mm.nb02);
++        S.jobs++;
++    }
++    S.cv.notify_all();
++}
++
++} // namespace
++
++extern "C" void edx_prefetch_mmid(const struct ggml_tensor * src0, const struct ggml_tensor * ids) {
++    if (S.mode < 0) init();
++    if (S.mode == 0 || ids->ne[1] > 8) return;   // decode only; prompt batches read whole tensors anyway
++    int layer;
++    const int kind = kind_of(src0->name, &layer);
++    if (kind < 0) return;
++    mat & me = S.mats[layer][kind];
++    if (!me.data) { me.data = (const char *) src0->data; me.nb02 = src0->nb[2]; me.ne02 = src0->ne[2]; }
++
++    std::vector<int32_t> picked;
++    for (int64_t t = 0; t < ids->ne[1]; ++t) {
++        for (int64_t i = 0; i < ids->ne[0]; ++i) {
++            const int32_t e = *(const int32_t *) ((const char *) ids->data + t*ids->nb[1] + i*ids->nb[0]);
++            if (e >= 0) picked.push_back(e);
++        }
++    }
++
++    // stats: how much of what this op is about to read is already in RAM
++    S.ops++;
++    if (S.ctl && S.ops % 64 == 0) poll_ctl();
++    const int md = S.mode;
++    S.m_ops[md]++;
++    { timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); S.t_start = ts.tv_sec * 1000000000LL + ts.tv_nsec; S.t_mode = md; }
++    for (int32_t e : picked) {
++        const uintptr_t pg = 4096;
++        const uintptr_t a = (uintptr_t) (me.data + (size_t) e * me.nb02) & ~(pg - 1);
++        const uintptr_t b = (uintptr_t) (me.data + (size_t) (e + 1) * me.nb02);
++        const size_t np = (b - a + pg - 1) / pg;
++        if (S.vec.size() < np) S.vec.resize(np);
++        if (mincore((void *) a, b - a, S.vec.data()) == 0) {
++            long long r = 0;
++            for (size_t i = 0; i < np; ++i) r += S.vec[i] & 1;
++            S.pages_res += r; S.pages_total += (long long) np;
++            S.m_res[md] += r; S.m_total[md] += (long long) np;
++        }
++    }
++    if (S.mode == 1) return;
++
++    // first expert op of this layer for this token: fetch the other matrices of the picked experts, then guess the next layer
++    const bool first_of_layer = layer != S.last_layer_seen;
++    S.last_layer_seen = layer;
++    if (!first_of_layer) return;
++    for (int32_t e : picked) enqueue(layer, e, kind);
++
++    const int nl = layer + 1;
++    if (nl >= MAX_LAYERS) { S.last[layer] = picked; return; }
++    std::vector<int32_t> guess;
++    if ((S.mode == 3 || S.mode == 5) && !S.last[nl].empty()) {
++        guess = S.last[nl];
++    }
++    if ((S.mode == 4 || S.mode == 5) && !S.succ.empty() && layer < S.L - 1) {
++        std::vector<float> score(S.E, 0.0f);
++        for (int32_t e : picked) {
++            if (e >= S.E) continue;
++            const int16_t * s = &S.succ[((size_t) layer * S.E + e) * S.M];
++            for (int j = 0; j < S.M; ++j) if (s[j] >= 0) score[s[j]] += 1.0f / (1 + j);
++        }
++        for (int n = 0; n < S.n_pred; ++n) {
++            int best = -1; float bv = 0.0f;
++            for (int e = 0; e < S.E; ++e) if (score[e] > bv) { bv = score[e]; best = e; }
++            if (best < 0) break;
++            score[best] = 0.0f; guess.push_back(best);
++        }
++    }
++    for (int32_t e : guess) enqueue(nl, e, -1);
++    S.last[layer] = picked;
++}
++
++// end of the same op on thread 0 (the op ends in a barrier, so thread 0's time ~ the op's time): CPU expert time per mode
++extern "C" void edx_prefetch_mmid_end(const struct ggml_tensor * ids) {
++    if (S.mode <= 0 || ids->ne[1] > 8 || S.t_start == 0) return;
++    timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
++    S.m_ns[S.t_mode] += ts.tv_sec * 1000000000LL + ts.tv_nsec - S.t_start;
++    S.t_start = 0;
++}
 diff --git i/ggml/src/ggml-cpu/ggml-cpu.c w/ggml/src/ggml-cpu/ggml-cpu.c
 index f4eaea5..375f989 100644
 --- i/ggml/src/ggml-cpu/ggml-cpu.c
@@ -96,10 +426,26 @@ index eb97569..ad7f91a 100644
  }
  
 diff --git i/src/llama-graph.cpp w/src/llama-graph.cpp
-index edf1ca7..d8a6c77 100644
+index edf1ca7..8f13f0c 100644
 --- i/src/llama-graph.cpp
 +++ w/src/llama-graph.cpp
-@@ -2339,6 +2339,38 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+@@ -1749,6 +1749,15 @@ ggml_tensor * llm_graph_context::build_lora_mm_id(
+         ggml_mul_mat_id(ctx0, w, cur_mm, ids) :
+         ggml_mul_mat_id(ctx0, moe_cache->get_experts(w), cur_mm, slots);
+ 
++    // EDX_PREFILL_LOCAL: in pinned mode a large batch runs each layer's experts on the GPU that holds the layer's pinned experts,
++    // so they are copied from that GPU's cache (same device) and only the cold experts come from host memory
++    static const bool edx_prefill_local = getenv("EDX_PREFILL_LOCAL") != nullptr;
++    if (edx_prefill_local && slots == nullptr && moe_cache != nullptr && moe_cache->pinned() && ids->ne[1] > 8) {
++        if (ggml_backend_t be = moe_cache->backend_of(w)) {
++            ggml_backend_sched_set_tensor_backend(sched, res, be);
++        }
++    }
++
+     if (prec_policy) {
+         prec_policy->apply(res);
+     }
+@@ -2339,6 +2348,38 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
          cb(selection_probs, "ffn_moe_probs_masked", il);
      }
  
@@ -138,7 +484,7 @@ index edf1ca7..d8a6c77 100644
      // select experts
      ggml_tensor * selected_experts = selected_experts_in;
      if (selected_experts == nullptr) {
-@@ -2346,6 +2378,13 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+@@ -2346,6 +2387,13 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
          cb(selected_experts->src[0], "ffn_moe_argsort", il);
      }
      cb(selected_experts, "ffn_moe_topk", il);
@@ -152,7 +498,7 @@ index edf1ca7..d8a6c77 100644
  
      if (arch == LLM_ARCH_GROVEMOE && n_expert != hparams.n_expert) {
          // TODO: Use scalar div instead when/if implemented
-@@ -2367,10 +2406,43 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+@@ -2367,10 +2415,43 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
          cb(weights, "ffn_moe_weights_softmax", il);
      }
  
@@ -196,7 +542,7 @@ index edf1ca7..d8a6c77 100644
          cb(weights_sum, "ffn_moe_weights_sum", il);
  
          if (arch == LLM_ARCH_DEEPSEEK41) {
-@@ -2392,12 +2464,18 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+@@ -2392,12 +2473,18 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
          cb(weights, "ffn_moe_weights_scaled", il);
      }
  
@@ -215,7 +561,7 @@ index edf1ca7..d8a6c77 100644
      cur = ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tokens);
  
      if (weight_before_ffn) {
-@@ -2621,6 +2699,37 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+@@ -2621,6 +2708,43 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
      cb(moe_out, "ffn_moe_out", il);
  
      return moe_out;
@@ -240,6 +586,12 @@ index edf1ca7..d8a6c77 100644
 +        ids_c = ggml_cast(ctx0, ids_c, GGML_TYPE_I32);
 +        ggml_tensor * w_h = ggml_mul(ctx0, weights, ggml_reshape_3d(ctx0, hot, 1, n_used, n_tokens));
 +        ggml_tensor * w_c = ggml_sub(ctx0, weights, w_h);
++        // EDX_OVERLAP: put the cold path's inputs in the graph before the hot experts, so the CPU split that computes the
++        // cold experts does not read anything the device split of the hot experts produces, and the scheduler can run them at once
++        if (getenv("EDX_OVERLAP") != nullptr && !moe_cache->draft()) {
++            ggml_build_forward_expand(gf, ids_c);
++            ggml_build_forward_expand(gf, w_c);
++        }
 +        ggml_tensor * out_h = edx_tail(cur, ids_h, ids_h, w_h);
 +        if (moe_cache->draft()) {
 +            return out_h; // every selected expert is pinned
@@ -253,7 +605,7 @@ index edf1ca7..d8a6c77 100644
  }
  
  ggml_tensor * llm_graph_context::build_moe_cache_slots(
-@@ -2630,7 +2739,7 @@ ggml_tensor * llm_graph_context::build_moe_cache_slots(
+@@ -2630,7 +2754,7 @@ ggml_tensor * llm_graph_context::build_moe_cache_slots(
           ggml_tensor * down_exps,
           ggml_tensor * gate_up_exps,
                   int   il) const {
@@ -263,7 +615,7 @@ index edf1ca7..d8a6c77 100644
      }
  
 diff --git i/src/llama-moe-cache.cpp w/src/llama-moe-cache.cpp
-index 6a343a7..80ecc2d 100644
+index 6a343a7..3427667 100644
 --- i/src/llama-moe-cache.cpp
 +++ w/src/llama-moe-cache.cpp
 @@ -1,5 +1,16 @@
@@ -621,12 +973,14 @@ index 6a343a7..80ecc2d 100644
          log_stats();
      }
  
-@@ -482,6 +776,13 @@ struct llama_moe_cache::impl {
+@@ -482,6 +776,15 @@ struct llama_moe_cache::impl {
          }
          const layer & l = layers[il];
  
 +        if (pinned) {
-+            if (n_tokens <= 0 || n_tokens > 8) { // the CUDA mul_mat_id path for > 8 tokens crashes with the split; decode is <= 8
++            // the CUDA mul_mat_id path for > 8 tokens crashed with the split (night 5); EDX_PIN_MAXTOK raises the limit to test it
++            static const int64_t max_tok = getenv("EDX_PIN_MAXTOK") ? atoll(getenv("EDX_PIN_MAXTOK")) : 8;
++            if (n_tokens <= 0 || n_tokens > max_tok) {
 +                return nullptr;
 +            }
 +            return !dev_map.empty() && dev_map[il] && dev_map[il]->buffer ? dev_map[il] : l.slot_map;
@@ -635,9 +989,18 @@ index 6a343a7..80ecc2d 100644
          // large batches use most experts of a layer, so they gain little from the cache and would evict the experts used in generation
          if (n_tokens == 0 || n_tokens > max_batch || std::min(n_tokens*n_expert_used, l.slot_map->ne[1]) > groups[l.ig].n_slots) {
              return nullptr;
-@@ -495,6 +796,9 @@ struct llama_moe_cache::impl {
+@@ -494,14 +797,28 @@ struct llama_moe_cache::impl {
+         return it != bindings.end() ? it->second.cached : nullptr;
      }
  
++    ggml_backend_t backend_of(const ggml_tensor * w) const {
++        const auto it = bindings.find(w);
++        if (it == bindings.end()) {
++            return nullptr;
++        }
++        return devices[groups[layers[it->second.il].ig].id].backend;
++    }
++
      int64_t copy_experts(ggml_backend_t backend, const ggml_tensor * w, ggml_tensor * dst, int64_t e, int64_t last) {
 +        if (steer_only) {
 +            return 0; // no expert copies exist: large batches read every expert from where it was loaded
@@ -645,7 +1008,27 @@ index 6a343a7..80ecc2d 100644
          const auto it = bindings.find(w);
          if (it == bindings.end()) {
              return 0;
-@@ -540,6 +844,38 @@ struct llama_moe_cache::impl {
+         }
+         const binding & b = it->second;
+         const group & g = groups[layers[b.il].ig];
+-        if (backend != devices[g.id].backend) {
++        // EDX: large batches run on the first GPU (op offload) while a layer's cache may live on another GPU; in pinned mode
++        // copy across devices instead of reading the expert from host memory, whose pages may have been given back (EDX_PAGEOUT)
++        const bool cross = backend != devices[g.id].backend;
++        if (cross && !(pinned && getenv("EDX_XDEV") != nullptr)) {
+             return 0;
+         }
+ 
+@@ -521,7 +838,7 @@ struct llama_moe_cache::impl {
+         ggml_tensor * dst_view = ggml_view_3d(ctx_views.get(), dst,  dst->ne[0],  dst->ne[1],  n, dst->nb[1],  dst->nb[2],  e*dst->nb[2]);
+         ggml_backend_view_init(src_view);
+         ggml_backend_view_init(dst_view);
+-        ggml_backend_tensor_copy_async(backend, backend, src_view, dst_view);
++        ggml_backend_tensor_copy_async(cross ? devices[g.id].backend : backend, backend, src_view, dst_view);
+ 
+         stats_copy.hits  += n;
+         stats_copy.bytes += ggml_nbytes(src_view);
+@@ -540,6 +857,38 @@ struct llama_moe_cache::impl {
  
          GGML_ASSERT(backend == devices[g.id].backend);
  
@@ -684,7 +1067,7 @@ index 6a343a7..80ecc2d 100644
          // the get_rows that looks up the slots of the selected experts
          const int n_nodes = ggml_graph_n_nodes(graph);
          const ggml_tensor * lookup = nullptr;
-@@ -622,6 +958,34 @@ llama_moe_cache::llama_moe_cache(const llama_model & model, bool no_alloc, const
+@@ -622,6 +971,34 @@ llama_moe_cache::llama_moe_cache(const llama_model & model, bool no_alloc, const
  
  llama_moe_cache::~llama_moe_cache() = default;
  
@@ -719,11 +1102,32 @@ index 6a343a7..80ecc2d 100644
  ggml_backend_t llama_moe_cache::backend(int32_t il) const {
      return pimpl->backend(il);
  }
+@@ -638,6 +1015,10 @@ bool llama_moe_cache::copy(ggml_backend_t backend, const ggml_tensor * src, ggml
+     return pimpl->copy(backend, src, dst, graph);
+ }
+ 
++ggml_backend_t llama_moe_cache::backend_of(const ggml_tensor * w) const {
++    return pimpl->backend_of(w);
++}
++
+ int64_t llama_moe_cache::copy_experts(ggml_backend_t backend, const ggml_tensor * w, ggml_tensor * dst, int64_t e, int64_t last) {
+     return pimpl->copy_experts(backend, w, dst, e, last);
+ }
 diff --git i/src/llama-moe-cache.h w/src/llama-moe-cache.h
-index 6c8e365..b825c4c 100644
+index 6c8e365..ce79ed1 100644
 --- i/src/llama-moe-cache.h
 +++ w/src/llama-moe-cache.h
-@@ -34,6 +34,16 @@ public:
+@@ -25,6 +25,9 @@ public:
+     // the experts of w in the cache, nullptr if w is not cached
+     ggml_tensor * get_experts(const ggml_tensor * w) const;
+ 
++    // EDX: the device whose cache holds experts of w, nullptr if w is not cached
++    ggml_backend_t backend_of(const ggml_tensor * w) const;
++
+     // ggml_backend_sched copy callback, returns false if src is not a slot map
+     bool copy(ggml_backend_t backend, const ggml_tensor * src, ggml_tensor * dst, ggml_cgraph * graph);
+ 
+@@ -34,6 +37,16 @@ public:
  
      std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const;
  
@@ -752,295 +1156,21 @@ index 6a6592c..3b9e4db 100644
      add_subdirectory(llama-bench)
      add_subdirectory(completion)
      add_subdirectory(perplexity)
-diff --git i/tools/server/server-context.cpp w/tools/server/server-context.cpp
-index 48f1e93..fe45ad2 100644
---- i/tools/server/server-context.cpp
-+++ w/tools/server/server-context.cpp
-@@ -583,6 +583,11 @@ struct server_slot {
-             return 0;
-         }
- 
-+        // EDX night 5: a request can opt out of drafting with "speculative.n_max": 0 (in-process A/B of MTP on/off)
-+        if (task->params.speculative.draft.n_max <= 0) {
-+            return 0;
-+        }
-+
-         // determine the max draft that fits the current slot state
-         // note: slot.prompt is not yet expanded with the `id` token sampled above
-         //       also, need to leave space for 1 extra token to allow context shifts
-diff --git i/tools/server/server-schema.cpp w/tools/server/server-schema.cpp
-index 0a14a96..c4edbea 100644
---- i/tools/server/server-schema.cpp
-+++ w/tools/server/server-schema.cpp
-@@ -196,6 +196,11 @@ std::vector<std::unique_ptr<field>> make_llama_cmpl_schema(const common_params &
-     // Speculative decoding params
-     //
- 
-+    // EDX night 5: only the per-request draft cap (0 = no drafting), for an in-process A/B of MTP on/off
-+    add((new field_num("speculative.n_max", params.speculative.draft.n_max))
-+        ->set_hard_limits(0, INT32_MAX)
-+        ->set_desc("Maximum number of tokens to draft during speculative decoding (0 = no drafting for this request)"));
-+
-     // TODO: to keep things simple, we disable speculative parameter adjustments for now
- #if 0
-     // TODO: for now, be able to adjust only the draft-model based speculative parameters
-diff --git 1/ggml/src/ggml-cpu/edx-prefetch.cpp 2/ggml/src/ggml-cpu/edx-prefetch.cpp
+diff --git i/tools/edx-trace/CMakeLists.txt w/tools/edx-trace/CMakeLists.txt
 new file mode 100644
-index 0000000..1aa69b4
+index 0000000..c8dd8b5
 --- /dev/null
-+++ 2/ggml/src/ggml-cpu/edx-prefetch.cpp
-@@ -0,0 +1,246 @@
-+// Expert Dispatch (night 5): read pool + layer-ahead prefetch for MoE experts that live in mmap'd RAM/SSD.
-+// Ideas from 0xSero's glm-flash-lite (a pool of parallel readers; start the next layer's reads before it runs),
-+// rebuilt for llama.cpp's CPU expert path. Exact: it only warms the page cache, the math is unchanged.
-+//
-+// EDX_PF_MODE (unset = off):
-+//   stats  : measure only. For every CPU expert op, how much of the picked experts was already in RAM (mincore).
-+//   same   : when a layer's first expert op runs, hand the same experts' other matrices (up/down) to the read pool.
-+//   prev   : same + next layer's experts guessed from the previous token's picks at that layer.
-+//   markov : same + next layer's experts guessed by a learned table (this layer's picks -> next layer's), EDX_PF_PRED=<file>.
-+//   both   : prev + markov.
-+// EDX_PF_THREADS (8): readers. EDX_PF_N (16): next-layer experts to fetch per token.
-+// EDX_PF_CTL=<file>: the mode is re-read from this file every 64 ops, so one warmed server can A/B modes in turn
-+//   (separate server runs swing 11-19 tok/s on this box from page-cache state alone); per-mode stats go to <file>.stats.
-+// EDX_PF_IO: advise (default: madvise WILLNEED, the kernel reads the range in large requests) or touch (one byte per page).
-+// Learned table file: int32 L, E, M, then int16 succ[L-1][E][M] (most frequent next-layer experts for each expert).
-+#include "ggml.h"
-+
-+#include <sys/mman.h>
-+#include <unistd.h>
-+#include <time.h>
-+
-+#include <atomic>
-+#include <condition_variable>
-+#include <cstdio>
-+#include <cstdlib>
-+#include <cstring>
-+#include <deque>
-+#include <mutex>
-+#include <string>
-+#include <thread>
-+#include <vector>
-+
-+namespace {
-+
-+enum { KIND_GATE, KIND_UP, KIND_DOWN, KIND_GATE_UP, N_KIND };
-+constexpr int MAX_LAYERS = 256;
-+
-+struct mat { const char * data = nullptr; size_t nb02 = 0; int64_t ne02 = 0; };
-+
-+struct state {
-+    int mode = -1;   // 0 off, 1 stats, 2 same, 3 prev, 4 markov, 5 both
-+    int n_pred = 16;
-+    mat mats[MAX_LAYERS][N_KIND];
-+    std::vector<int32_t> last[MAX_LAYERS];   // previous token's picks per layer
-+    int last_layer_seen = -1;
-+    int32_t L = 0, E = 0, M = 0;
-+    std::vector<int16_t> succ;
-+    // read pool
-+    std::mutex mu;
-+    std::condition_variable cv;
-+    std::deque<std::pair<const char *, size_t>> q;
-+    std::vector<std::thread> workers;
-+    // stats
-+    std::atomic<long long> pages_total{0}, pages_res{0}, ops{0}, jobs{0};
-+    long long m_total[6] = {0}, m_res[6] = {0}, m_ops[6] = {0}, m_ns[6] = {0};
-+    long long t_start = 0; int t_mode = 0;
-+    const char * ctl = nullptr;
-+    bool touch = false;
-+    bool workers_started = false;
-+    std::vector<unsigned char> vec;
-+};
-+
-+state S;
-+
-+void report() {
-+    if (S.mode >= 1 && S.pages_total > 0) {
-+        long long ns = 0; for (int i = 0; i < 6; ++i) ns += S.m_ns[i];
-+        fprintf(stderr, "EDX_PF mode=%d ops=%lld picked_pages=%lld resident_at_use=%.4f prefetch_jobs=%lld cpu_expert_ms=%.1f\n",
-+                S.mode, S.ops.load(), S.pages_total.load(), (double) S.pages_res / S.pages_total, S.jobs.load(), ns / 1e6);
-+    }
-+}
-+
-+void worker() {
-+    for (;;) {
-+        std::pair<const char *, size_t> j;
-+        {
-+            std::unique_lock<std::mutex> lk(S.mu);
-+            S.cv.wait(lk, [] { return !S.q.empty(); });
-+            j = S.q.front(); S.q.pop_front();
-+        }
-+        // touch one byte per page: synchronous faults in parallel across readers = a deep read queue on the SSD
-+        // (madvise WILLNEED alone goes through readahead, which the mmap's MADV_RANDOM hint limits)
-+        if (S.touch) {
-+            volatile char sink = 0;
-+            for (size_t off = 0; off < j.second; off += 4096) {
-+                sink += j.first[off];
-+            }
-+            (void) sink;
-+        } else {
-+            const uintptr_t pg = 4096, a = (uintptr_t) j.first & ~(pg - 1);
-+            madvise((void *) a, (uintptr_t) j.first + j.second - a, MADV_WILLNEED);
-+        }
-+    }
-+}
-+
-+int parse_mode(const char * m) {
-+    if (!strncmp(m, "stats", 5))  return 1;
-+    if (!strncmp(m, "same", 4))   return 2;
-+    if (!strncmp(m, "prev", 4))   return 3;
-+    if (!strncmp(m, "markov", 6)) return 4;
-+    if (!strncmp(m, "both", 4))   return 5;
-+    return 1;   // "off" under a control file still measures
-+}
-+
-+void start_workers() {
-+    if (S.workers_started) return;
-+    S.workers_started = true;
-+    const int nt = getenv("EDX_PF_THREADS") ? atoi(getenv("EDX_PF_THREADS")) : 8;
-+    for (int i = 0; i < nt; ++i) { S.workers.emplace_back(worker); S.workers.back().detach(); }
-+}
-+
-+void poll_ctl() {
-+    char buf[32] = {0};
-+    FILE * f = fopen(S.ctl, "r");
-+    if (f) { if (fgets(buf, sizeof(buf), f)) S.mode = parse_mode(buf); fclose(f); }
-+    if (S.mode >= 2) start_workers();
-+    std::string sp = std::string(S.ctl) + ".stats";
-+    FILE * o = fopen(sp.c_str(), "w");
-+    if (o) {
-+        for (int i = 1; i < 6; ++i) fprintf(o, "%d %lld %lld %lld %lld\n", i, S.m_ops[i], S.m_total[i], S.m_res[i], S.m_ns[i]);
-+        fclose(o);
-+    }
-+}
-+
-+void init() {
-+    const char * m = getenv("EDX_PF_MODE");
-+    S.ctl = getenv("EDX_PF_CTL");
-+    S.touch = getenv("EDX_PF_IO") && !strcmp(getenv("EDX_PF_IO"), "touch");
-+    S.mode = 0;
-+    if (S.ctl) m = "stats";
-+    if (!m) return;
-+    S.mode = parse_mode(m);
-+    if (getenv("EDX_PF_N")) S.n_pred = atoi(getenv("EDX_PF_N"));
-+    if (S.mode >= 4 || S.ctl) {
-+        const char * p = getenv("EDX_PF_PRED");
-+        FILE * f = p ? fopen(p, "rb") : nullptr;
-+        if (f && fread(&S.L, 4, 1, f) == 1 && fread(&S.E, 4, 1, f) == 1 && fread(&S.M, 4, 1, f) == 1) {
-+            S.succ.resize((size_t) (S.L - 1) * S.E * S.M);
-+            if (fread(S.succ.data(), 2, S.succ.size(), f) != S.succ.size()) S.succ.clear();
-+        }
-+        if (f) fclose(f);
-+        fprintf(stderr, "EDX_PF learned table %s: L=%d E=%d M=%d %s\n", p ? p : "(none)", S.L, S.E, S.M, S.succ.empty() ? "MISSING" : "ok");
-+    }
-+    if (S.mode >= 2) start_workers();
-+    if (S.ctl) poll_ctl();
-+    atexit(report);
-+}
-+
-+int kind_of(const char * name, int * layer) {
-+    if (sscanf(name, "blk.%d.", layer) != 1 || *layer < 0 || *layer >= MAX_LAYERS) return -1;
-+    if (strstr(name, "ffn_gate_up_exps")) return KIND_GATE_UP;
-+    if (strstr(name, "ffn_gate_exps"))    return KIND_GATE;
-+    if (strstr(name, "ffn_up_exps"))      return KIND_UP;
-+    if (strstr(name, "ffn_down_exps"))    return KIND_DOWN;
-+    return -1;
-+}
-+
-+void enqueue(int layer, int e, int skip_kind) {
-+    std::lock_guard<std::mutex> lk(S.mu);
-+    for (int k = 0; k < N_KIND; ++k) {
-+        const mat & mm = S.mats[layer][k];
-+        if (k == skip_kind || !mm.data || e < 0 || e >= mm.ne02) continue;
-+        if (S.q.size() > 4096) return;   // readers are behind: drop guesses rather than queue stale work
-+        S.q.emplace_back(mm.data + (size_t) e * mm.nb02, mm.nb02);
-+        S.jobs++;
-+    }
-+    S.cv.notify_all();
-+}
-+
-+} // namespace
-+
-+extern "C" void edx_prefetch_mmid(const struct ggml_tensor * src0, const struct ggml_tensor * ids) {
-+    if (S.mode < 0) init();
-+    if (S.mode == 0 || ids->ne[1] > 8) return;   // decode only; prompt batches read whole tensors anyway
-+    int layer;
-+    const int kind = kind_of(src0->name, &layer);
-+    if (kind < 0) return;
-+    mat & me = S.mats[layer][kind];
-+    if (!me.data) { me.data = (const char *) src0->data; me.nb02 = src0->nb[2]; me.ne02 = src0->ne[2]; }
-+
-+    std::vector<int32_t> picked;
-+    for (int64_t t = 0; t < ids->ne[1]; ++t) {
-+        for (int64_t i = 0; i < ids->ne[0]; ++i) {
-+            const int32_t e = *(const int32_t *) ((const char *) ids->data + t*ids->nb[1] + i*ids->nb[0]);
-+            if (e >= 0) picked.push_back(e);
-+        }
-+    }
-+
-+    // stats: how much of what this op is about to read is already in RAM
-+    S.ops++;
-+    if (S.ctl && S.ops % 64 == 0) poll_ctl();
-+    const int md = S.mode;
-+    S.m_ops[md]++;
-+    { timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); S.t_start = ts.tv_sec * 1000000000LL + ts.tv_nsec; S.t_mode = md; }
-+    for (int32_t e : picked) {
-+        const uintptr_t pg = 4096;
-+        const uintptr_t a = (uintptr_t) (me.data + (size_t) e * me.nb02) & ~(pg - 1);
-+        const uintptr_t b = (uintptr_t) (me.data + (size_t) (e + 1) * me.nb02);
-+        const size_t np = (b - a + pg - 1) / pg;
-+        if (S.vec.size() < np) S.vec.resize(np);
-+        if (mincore((void *) a, b - a, S.vec.data()) == 0) {
-+            long long r = 0;
-+            for (size_t i = 0; i < np; ++i) r += S.vec[i] & 1;
-+            S.pages_res += r; S.pages_total += (long long) np;
-+            S.m_res[md] += r; S.m_total[md] += (long long) np;
-+        }
-+    }
-+    if (S.mode == 1) return;
-+
-+    // first expert op of this layer for this token: fetch the other matrices of the picked experts, then guess the next layer
-+    const bool first_of_layer = layer != S.last_layer_seen;
-+    S.last_layer_seen = layer;
-+    if (!first_of_layer) return;
-+    for (int32_t e : picked) enqueue(layer, e, kind);
-+
-+    const int nl = layer + 1;
-+    if (nl >= MAX_LAYERS) { S.last[layer] = picked; return; }
-+    std::vector<int32_t> guess;
-+    if ((S.mode == 3 || S.mode == 5) && !S.last[nl].empty()) {
-+        guess = S.last[nl];
-+    }
-+    if ((S.mode == 4 || S.mode == 5) && !S.succ.empty() && layer < S.L - 1) {
-+        std::vector<float> score(S.E, 0.0f);
-+        for (int32_t e : picked) {
-+            if (e >= S.E) continue;
-+            const int16_t * s = &S.succ[((size_t) layer * S.E + e) * S.M];
-+            for (int j = 0; j < S.M; ++j) if (s[j] >= 0) score[s[j]] += 1.0f / (1 + j);
-+        }
-+        for (int n = 0; n < S.n_pred; ++n) {
-+            int best = -1; float bv = 0.0f;
-+            for (int e = 0; e < S.E; ++e) if (score[e] > bv) { bv = score[e]; best = e; }
-+            if (best < 0) break;
-+            score[best] = 0.0f; guess.push_back(best);
-+        }
-+    }
-+    for (int32_t e : guess) enqueue(nl, e, -1);
-+    S.last[layer] = picked;
-+}
-+
-+// end of the same op on thread 0 (the op ends in a barrier, so thread 0's time ~ the op's time): CPU expert time per mode
-+extern "C" void edx_prefetch_mmid_end(const struct ggml_tensor * ids) {
-+    if (S.mode <= 0 || ids->ne[1] > 8 || S.t_start == 0) return;
-+    timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
-+    S.m_ns[S.t_mode] += ts.tv_sec * 1000000000LL + ts.tv_nsec - S.t_start;
-+    S.t_start = 0;
-+}
-diff --git 1/tools/edx-trace/edx-trace.cpp 2/tools/edx-trace/edx-trace.cpp
++++ w/tools/edx-trace/CMakeLists.txt
+@@ -0,0 +1,4 @@
++set(TARGET llama-edx-trace)
++add_executable(${TARGET} edx-trace.cpp)
++target_link_libraries(${TARGET} PRIVATE llama-common llama ggml ${CMAKE_THREAD_LIBS_INIT})
++target_compile_features(${TARGET} PRIVATE cxx_std_17)
+diff --git i/tools/edx-trace/edx-trace.cpp w/tools/edx-trace/edx-trace.cpp
 new file mode 100644
 index 0000000..b09dc61
 --- /dev/null
-+++ 2/tools/edx-trace/edx-trace.cpp
++++ w/tools/edx-trace/edx-trace.cpp
 @@ -0,0 +1,160 @@
 +// Expert Dispatch: per-token MoE routing tracer.
 +// Runs the prompt file (-f) in chunks of n_ctx and writes, for every token,
@@ -1202,13 +1332,35 @@ index 0000000..b09dc61
 +    fprintf(stderr, "EDX_TRACE_DONE T=%lld L=%d K=%d\n", T, L, st.k);
 +    return 0;
 +}
-diff --git 1/tools/edx-trace/CMakeLists.txt 2/tools/edx-trace/CMakeLists.txt
-new file mode 100644
-index 0000000..c8dd8b5
---- /dev/null
-+++ 2/tools/edx-trace/CMakeLists.txt
-@@ -0,0 +1,4 @@
-+set(TARGET llama-edx-trace)
-+add_executable(${TARGET} edx-trace.cpp)
-+target_link_libraries(${TARGET} PRIVATE llama-common llama ggml ${CMAKE_THREAD_LIBS_INIT})
-+target_compile_features(${TARGET} PRIVATE cxx_std_17)
+diff --git i/tools/server/server-context.cpp w/tools/server/server-context.cpp
+index 48f1e93..fe45ad2 100644
+--- i/tools/server/server-context.cpp
++++ w/tools/server/server-context.cpp
+@@ -583,6 +583,11 @@ struct server_slot {
+             return 0;
+         }
+ 
++        // EDX night 5: a request can opt out of drafting with "speculative.n_max": 0 (in-process A/B of MTP on/off)
++        if (task->params.speculative.draft.n_max <= 0) {
++            return 0;
++        }
++
+         // determine the max draft that fits the current slot state
+         // note: slot.prompt is not yet expanded with the `id` token sampled above
+         //       also, need to leave space for 1 extra token to allow context shifts
+diff --git i/tools/server/server-schema.cpp w/tools/server/server-schema.cpp
+index 0a14a96..c4edbea 100644
+--- i/tools/server/server-schema.cpp
++++ w/tools/server/server-schema.cpp
+@@ -196,6 +196,11 @@ std::vector<std::unique_ptr<field>> make_llama_cmpl_schema(const common_params &
+     // Speculative decoding params
+     //
+ 
++    // EDX night 5: only the per-request draft cap (0 = no drafting), for an in-process A/B of MTP on/off
++    add((new field_num("speculative.n_max", params.speculative.draft.n_max))
++        ->set_hard_limits(0, INT32_MAX)
++        ->set_desc("Maximum number of tokens to draft during speculative decoding (0 = no drafting for this request)"));
++
+     // TODO: to keep things simple, we disable speculative parameter adjustments for now
+ #if 0
+     // TODO: for now, be able to adjust only the draft-model based speculative parameters

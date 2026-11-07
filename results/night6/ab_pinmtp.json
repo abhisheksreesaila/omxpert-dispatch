@@ -1,0 +1,65 @@
+{
+ "stack_args": "-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib 30000 -lzm off -md /home/abhisheksreesaila/models/Qwen3.8-Flash-Next-GGUF/mtp-Qwen3.8-Flash-Next-Q8_0.gguf -devd CUDA0 --spec-type draft-mtp --spec-draft-n-max 2",
+ "stack_env": "EDX_PIN=results/night6/pins/chat.bin EDX_PAGEOUT=1 EDX_XDEV=1 EDX_OVERLAP=1 EDX_PREFILL_LOCAL=1",
+ "prompts": "chat",
+ "load_s": 183,
+ "warm": [
+  13.1,
+  11.89,
+  16.79,
+  3.79,
+  17.75,
+  0.0,
+  17.37,
+  19.61
+ ],
+ "arms": {
+  "mtp": {
+   "extra": {
+    "speculative.n_max": 2
+   },
+   "median_tok_s": 21.74,
+   "prefill_median": 149.8,
+   "paired_ratios": [
+    0.787,
+    0.922,
+    1.302,
+    1.068
+   ],
+   "vs_nomtp": 0.945
+  },
+  "nomtp": {
+   "extra": {
+    "speculative.n_max": 0
+   },
+   "median_tok_s": 23.0,
+   "prefill_median": 154.2,
+   "paired_ratios": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "vs_nomtp": 1.0
+  }
+ },
+ "rounds": [
+  {
+   "mtp": 14.996666666666666,
+   "nomtp": 19.060000000000002
+  },
+  {
+   "nomtp": 25.55666666666667,
+   "mtp": 23.55333333333333
+  },
+  {
+   "mtp": 26.256666666666668,
+   "nomtp": 20.16
+  },
+  {
+   "nomtp": 23.226666666666667,
+   "mtp": 24.80666666666667
+  }
+ ],
+ "base_arm": "nomtp"
+}

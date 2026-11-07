@@ -23,8 +23,19 @@ fi
 #                 and prompts got 3-4x slower on this 2x3090 + 62 GB box. Use it for chat with short prompts, not for agents.
 MTP_FILE="$MODEL_DIR/mtp-Qwen3.8-Flash-Next-Q8_0.gguf"
 if [ "${MTP:-0}" = "1" ]; then DEF_ARGS="-lzm off -md $MTP_FILE --spec-type draft-mtp --spec-draft-n-max 2"; else DEF_ARGS="-lzm off"; fi
+DEF_ENV=""
+# --- night 6: STACK=pinned, the learned stack (results/night6, docs/report_night6.md) ---
+#  your profile (omxpert/profile.sh) picks which experts live in VRAM, across both GPUs, the rest stay in RAM, never both (0xSero's
+#  exclusive tiers); the CPU computes the cold experts while the GPUs compute the hot ones (FreeToken's hybrid idea, EDX_OVERLAP);
+#  prompt batches run each layer on the GPU that holds its pins (EDX_PREFILL_LOCAL, EDX_XDEV). PIN_MIB: VRAM for pins (2x3090: 36500).
+if [ "${STACK:-}" = "pinned" ]; then
+  PIN_FILE="${PIN_FILE:-$D/omxpert/pins/profile.bin}"
+  [ -f "$PIN_FILE" ] || { echo "no profile at $PIN_FILE: run omxpert/profile.sh first (it learns your experts from your own text)"; exit 1; }
+  DEF_ARGS="-fit off -ngl 99 --n-cpu-moe 48 --moe-cache-mib ${PIN_MIB:-36500} -lzm off"
+  DEF_ENV="EDX_PIN=$PIN_FILE EDX_PAGEOUT=1 EDX_XDEV=1 EDX_OVERLAP=1 EDX_PREFILL_LOCAL=1"
+fi
 STACK_ARGS="${STACK_ARGS-$DEF_ARGS}"
-STACK_ENV="${STACK_ENV-}"
+STACK_ENV="${STACK_ENV-$DEF_ENV}"
 # ---------------------------------------------------------------------------------
 cmd=(env $STACK_ENV nice -n 10 "$LLAMA" -m "$GG" --host 127.0.0.1 --port "$PORT" -c "${CTX:-16384}" -np 1 $STACK_ARGS)
 if [ "$1" != "smoke" ]; then

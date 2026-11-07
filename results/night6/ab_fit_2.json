@@ -1,0 +1,45 @@
+{
+ "stack_args": "-lzm off",
+ "stack_env": "",
+ "prompts": "chat",
+ "load_s": 186,
+ "warm": [
+  11.59,
+  16.44,
+  13.16,
+  18.84,
+  16.53,
+  0.0,
+  16.29,
+  16.29
+ ],
+ "arms": {
+  "base": {
+   "extra": {},
+   "median_tok_s": 15.68,
+   "prefill_median": 83.4,
+   "paired_ratios": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "vs_base": 1.0
+  }
+ },
+ "rounds": [
+  {
+   "base": 12.146666666666667
+  },
+  {
+   "base": 15.780000000000001
+  },
+  {
+   "base": 15.866666666666667
+  },
+  {
+   "base": 16.33
+  }
+ ],
+ "base_arm": "base"
+}

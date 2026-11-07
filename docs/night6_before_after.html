@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset=utf-8><title>Night 6: three sets of tricks, one engine</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1100px;margin:24px auto;padding:0 16px;color:#e8e6e1;background:#16181d}
+h1{font-size:26px;margin:0 0 4px} h2{font-size:18px;margin:28px 0 8px;color:#f5c451} .sub{color:#a9a59c}
+table{width:100%;border-collapse:collapse;font-size:14px} td,th{padding:6px 8px;border-bottom:1px solid #2a2d35;vertical-align:top;text-align:left}
+.bar{display:inline-block;height:12px;background:#f5c451;border-radius:3px;margin-right:6px;vertical-align:middle} .bar.p{background:#6aa9ff}
+.n{color:#a9a59c;font-size:13px} .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:#1e2128;border-radius:10px;padding:14px 16px;box-shadow:0 2px 10px #0006}
+.tier{border-radius:8px;padding:8px 10px;margin:6px 0;font-size:13px} .gpu{background:#3b3220;border-left:4px solid #f5c451}
+.ram{background:#1f2c3d;border-left:4px solid #6aa9ff} .ssd{background:#2a2a2a;border-left:4px solid #888} .cpu{background:#23302a;border-left:4px solid #63c58a}
+.arrow{text-align:center;color:#a9a59c;font-size:12px}
+</style></head><body>
+<h1>Night 6: three sets of tricks, one engine</h1>
+<div class=sub>Qwen3.8-Flash-Next (Qwen 4 preview architecture, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM. Every number below was measured on this box (results/night6).</div>
+
+<h2>Before and after, as data flow</h2>
+<div class=cols>
+<div class=card><b>Before: llama.cpp's fit (range partitioning by layer)</b>
+<div class="tier gpu">GPUs: layers 1–24, all 512 experts each (37.7 GB), including the ones your work never picks</div>
+<div class="tier ram">RAM (page cache): layers 25–48, all experts (39 GB)</div>
+<div class="tier cpu">CPU: computes every pick of layers 25–48: half of the 480 picks per token, 32 of 49 ms</div>
+<div class=arrow>GPU and CPU take turns: the token waits for both</div></div>
+<div class=card><b>After: your profile tiers the experts (hot/cold storage, parallel query)</b>
+<div class="tier gpu">GPUs: the experts your chat history uses most, from all 48 layers (36,500 MiB, 51% of all experts), 94% of held-out chat picks</div>
+<div class="tier ram">RAM: only the experts not in VRAM (exclusive tiers, no double copies)</div>
+<div class="tier cpu">CPU: the few cold picks, computed <i>while</i> the GPUs compute the hot ones</div>
+<div class=arrow>prompt batches run each layer on the GPU that owns its pins</div></div>
+</div>
+
+<h2>The speed ladder (held-out chat prompts, tok/s; bars: decode gold, prompt blue)</h2>
+<table><tr><th>Setup</th><th>Decode</th><th>Prompt</th><th></th></tr><tr><td>FreeToken-Kai as is (its 64 GB mode)</td><td><div class=bar style='width:6%'></div><b>1.37</b></td><td><div class='bar p' style='width:15%'></div><b>17.3</b></td><td class=n>coding prompts</td></tr><tr><td>llama.cpp pinned, night-5 code</td><td><div class=bar style='width:42%'></div><b>8.88</b></td><td><div class='bar p' style='width:9%'></div><b>9.8</b></td><td class=n>3148.2 page faults/token</td></tr><tr><td>+ copy pins across GPUs for prompts</td><td><div class=bar style='width:73%'></div><b>15.4</b></td><td><div class='bar p' style='width:19%'></div><b>21.2</b></td><td class=n>188.9 faults/token</td></tr><tr><td>+ CPU works while GPU works</td><td><div class=bar style='width:88%'></div><b>18.71</b></td><td><div class='bar p' style='width:17%'></div><b>18.9</b></td><td class=n>separate run</td></tr><tr><td>+ each layer's prompt work on its own GPU</td><td><div class=bar style='width:100%'></div><b>21.21</b></td><td><div class='bar p' style='width:82%'></div><b>92.8</b></td><td class=n>47.6 faults/token</td></tr><tr><td>llama.cpp's own fit (stock layout)</td><td><div class=bar style='width:100%'></div><b>21.14</b></td><td><div class='bar p' style='width:100%'></div><b>113.6</b></td><td class=n>the bar to beat</td></tr></table>
+<p class=n>Separate runs on a shared desktop swing; the comparisons that count are below.</p>
+
+<h2>Same-method comparisons</h2>
+<table><tr><td>Pinned stack vs llama.cpp fit (interleaved servers, server timings)</td><td><b>21.6</b> vs <b>16.7</b> tok/s decode, <b>210.2</b> vs <b>95.8</b> prompt</td></tr>
+<tr><td>Same intelligence (greedy coding outputs vs stock llama.cpp, word match)</td><td>stack 0.486, steering λ0.5 0.531, stock-vs-stock floor 0.351: not bit-exact; diverges from stock about as much as another engine on the same model does (weak test: 3 prompts x 128 tokens)</td></tr></table>
+
+<h2>Each trick, whose it is, and its database twin</h2>
+<table><tr><th>Trick</th><th>From</th><th>Database twin</th><th>Measured</th></tr><tr><td>Profile from your own chat history picks the VRAM experts</td><td>omxpert</td><td class=n>a buffer pool that pins the pages your queries hit</td><td>30% of experts serve 0.789 of held-out chat picks (night-5 coding profile: 0.437); stack vs fit: 21.6 vs 16.7 tok/s, prompts 210.2 vs 95.8</td></tr><tr><td>Exclusive tiers: an expert lives in VRAM or RAM, never both</td><td>0xSero</td><td class=n>hot/cold storage tiering without duplicate copies</td><td>what makes 48 GB of VRAM + ~40 GB of free RAM hold all 77 GB of experts</td></tr><tr><td>CPU computes cold experts while the GPUs compute hot ones</td><td>FreeToken (FlashML)</td><td class=n>a parallel query: two engines scan their partitions at once</td><td>same-server A/B: on 24.42 vs off 24.21 tok/s, rounds 0.70, 1.07, 1.02, 1.10, 1.02, 1.07</td></tr><tr><td>Prompt batches run each layer on the GPU that holds its pins</td><td>tonight (fix)</td><td class=n>push the query to the node that owns the partition</td><td>prompts 9.8 → 92.8 tok/s, faults 3148.2 → 47.6 per token</td></tr><tr><td>Layer-ahead prefetch of the next layer's experts</td><td>0xSero idea, our reader</td><td class=n>read-ahead of the next index pages</td><td>paired rounds 0.94, 1.12, 1.26, 0.96, 0.90, 0.97, 1.05, 1.05</td></tr><tr><td>MTP drafting (Qwen's draft head)</td><td>Qwen / llama.cpp</td><td class=n>speculative execution, verified</td><td>mtp 21.74 vs 23.0 tok/s, rounds 0.79, 0.92, 1.30, 1.07; prompts 149.8</td></tr></table>
+
+<h2>Credits</h2>
+<p><b>0xSero</b> (glm-flash-lite): exclusive tiers, layer-ahead prefetch, read pool, staged prefill, CPU/GPU overlap. <b>FreeToken</b> (FlashML, Apache-2.0)
+and its Kai fork: the hybrid executor that computes misses on the CPU while the GPU works, which we ported into llama.cpp's scheduler.
+<b>Qwen</b>: the model and its MTP head. <b>llama.cpp / ggml</b> and <b>unsloth</b> (GGUF). Profiles from your own chat history, the learned guesser and
+steering are omxpert's.</p>
+</body></html>
