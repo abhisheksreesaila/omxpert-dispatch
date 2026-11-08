@@ -6,7 +6,9 @@
 
 Research journey, day by day: [docs/JOURNEY.md](docs/JOURNEY.md) →
 
-**Run a mixture-of-experts model far bigger than your memory by loading only the experts *your* work uses.**
+**An open experiment: can we learn, from your own sessions, which experts of a mixture-of-experts model you use, keep re-learning them as your needs change, and combine that with tricks others have shared (FreeToken, 0xSero's) into a better way to run big models locally?**
+
+We don't know yet. Below is the story so far, then the results, wins and failures. Ideas and criticism are welcome: [open an issue](https://github.com/abhisheksreesaila/omxpert-dispatch/issues).
 
 A 63 GB model (gpt-oss-120b, as released, MXFP4) on a 16 GB MacBook Pro (Apple M4). Exact model: 1.04 tok/s. Steered toward the coding profile: 2.96 tok/s on real text (λ=1, +8.3% perplexity).
 
@@ -18,7 +20,7 @@ This is a research log, not a product. Every number here was measured on real ha
 
 Mixture-of-experts models are where open AI is going ("Dense is basically over", Thom Wolf, as Hugging Face released its MoE training handbook). They are huge, but sparse: gpt-oss-120b wakes 4 of its 128 experts per token, and one person's work keeps waking the same few.
 
-Everyone already offloads experts to RAM and SSD and caches them reactively. The idea here is different: **treat your expert set as something learned.**
+Engines already offload experts to RAM and SSD and cache them reactively, and that works well. The question here: **what if your expert set were something learned?**
 
 1. **Profile** your own sessions and record which experts each kind of task uses (coding, search, docs, tools).
 2. **Classify** a new session from its first prompt (99–100% in our simulations) and **predict** its experts.
@@ -26,10 +28,10 @@ Everyone already offloads experts to RAM and SSD and caches them reactively. The
 4. **Re-profile** when your work shifts (this week Python, the weekend Mojo). Same model, new expert set. No quantization, no retraining.
 5. When a rare token wants an expert that isn't loaded, **borrow a loaded neighbour** (a small router nudge, λ) instead of waiting on the SSD.
 
-## New (2026-11-07): Qwen 4's architecture on a desktop, faster than stock
+## New (2026-11-07): trying it on Qwen 4's architecture, on one desktop
 
-Qwen3.8-Flash-Next (Qwen 4 preview architecture: 125B MoE + 51B n-gram table, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM.
-Three sets of tricks in one engine: **your profile** (from your own chat history) picks the VRAM experts, **0xSero's exclusive
+Qwen3.8-Flash-Next (Qwen 4 preview architecture: 125B MoE + 51B n-gram table, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM. An early result: one machine, one person's history.
+We tried three sets of tricks in one engine: **your profile** (from your own chat history) picks the VRAM experts, **0xSero's exclusive
 tiers** keep each expert in VRAM or RAM but never both, and **FreeToken's CPU-while-GPU** hybrid, ported into llama.cpp's scheduler.
 
 | Your held-out chat prompts (2 interleaved server pairs) | Decode tok/s | Prompt tok/s |
@@ -62,7 +64,7 @@ On a small MoE (OLMoE-1B-7B, 64 experts, 8 per token), routing strictly to a few
 - Caveats: one small model; the bundle agrees with the full model's top guess 71–82% of the time; the adapter also lowers perplexity on its own (unexplained, see `docs/logs/NIGHT3_LOG.md`). Not yet on the 120B.
 - gpt-oss-120b on the 16 GB Mac (steered, real graded coding tasks): 7/8 and 8/8 tests passed; running 4 real jobs at once was slower than one at a time.
 
-## What we found: Pin, Steer, Batch
+## What we've seen so far: Pin, Steer, Batch
 
 Pin and steer did the work; batch is still open (see the correction below):
 
@@ -109,7 +111,7 @@ Qwen3-Coder-30B-A3B (18.6 GB, top-8 of 128): steering λ=1 is 1.64× for +1.1% p
 
 On Qwen3.6-35B-A3B (256 experts per layer), a profile built from your own coding beats one built from your other work by **+11 points** of hit rate at a 25% cache, and is nearly **2×** better at 6%. Coarse models (64 experts) barely specialize (+1.8 points). Profiles go stale (25–28% of the hot set changed within weeks), so refresh them.
 
-## The design this points to: two lanes
+## A design we're considering: two lanes
 
 ```
  you ──► fast chat lane (small model)        background work lane (big MoE, full intelligence)
@@ -119,7 +121,7 @@ On Qwen3.6-35B-A3B (256 experts per layer), a profile built from your own coding
          • steps aside (16 GB can't hold both)  ~3 tok/s per job on gpt-oss-120b
 ```
 
-## Open directions (not done)
+## Open directions (not done; what would you try?)
 
 - **Steering-aware adapter.** λ=1 is 2.85× faster but costs 8.3% quality. Treat each expert as an "agent" and train a small adapter that corrects for a substituted expert; recover the quality, keep the speed. The most promising next step.
 - **Onboarding: profile from your history.** Most people already have chat sessions to export. A short guided session (~15 minutes) plus a classifier picks the experts per task type, which removes the cold start.

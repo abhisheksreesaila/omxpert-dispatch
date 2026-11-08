@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <script>document.documentElement.classList.add("js")</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>omxpert dispatch · omxlabs research · only the experts you need</title>
-<meta name="description" content="Learn which experts of a mixture-of-experts model your work needs, from your own sessions. Load those at full precision; leave the rest on disk. A 120B model on a 16 GB laptop.">
+<title>omxpert dispatch · omxlabs research · only the experts you need?</title>
+<meta name="description" content="An open experiment: can we learn which experts of a mixture-of-experts model your work uses, keep re-learning them as your needs change, and combine that with tricks others have shared into a better way to run big models locally?">
 <style>
 @font-face { font-family: "Geist"; src: url(fonts/geist-variable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/geist-mono-variable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -225,7 +225,7 @@ footer a { color: var(--acc); }
 <header class="top">
   <a class="brand" href="#top" aria-label="omxpert dispatch, top"><span class="mark" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></span><span class="nm">omxpert dispatch</span><span class="rtag">Research</span></a>
   <nav class="pill" aria-label="Sections">
-    <a href="#why">Why MoE</a><a href="#idea">Predict, not cache</a><a href="#how">How</a><a href="#weekly">Every week</a><a href="#learned">Learned</a><a href="#qwen4">Qwen 4</a><a href="#evidence">Evidence</a><a href="#next">Next</a>
+    <a href="#why">Why MoE</a><a href="#idea">The question</a><a href="#how">How</a><a href="#weekly">Every week</a><a href="#learned">Learned</a><a href="#qwen4">Qwen 4</a><a href="#evidence">Evidence</a><a href="#next">Next</a>
   </nav>
   <a class="get cta sm" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
 </header>
@@ -234,9 +234,9 @@ footer a { color: var(--acc); }
   <div class="hero">
     <div>
       <div class="eyebrow"><span class="rtag big">omxlabs research project</span> November 2026</div>
-      <h1 class="rise" aria-label="Only the experts you need."><span>Only</span> <span>the</span> <span>experts</span><br><span class="two">you</span> <span class="two">need.</span></h1>
-      <p class="sub">Your work uses a small slice of a mixture-of-experts model. <b>Learn which slice from your own sessions</b>, load it at full precision, and leave the rest on disk. A 120B model on a 16 GB laptop, with nothing quantized away.</p>
-      <div class="ctas"><a class="cta" href="#idea">See the idea</a><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch">Code and lab notes</a></div>
+      <h1 class="rise" aria-label="Only the experts you need?"><span>Only</span> <span>the</span> <span>experts</span><br><span class="two">you</span> <span class="two">need?</span></h1>
+      <p class="sub">An open experiment. Your work seems to use a small slice of a mixture-of-experts model. <b>Can we learn which slice from your own sessions</b>, keep re-learning it as your needs change, and combine it with tricks others have shared into a better way to run big models at home? Here is what we have tried so far, wins and failures. We would love to hear what you think.</p>
+      <div class="ctas"><a class="cta" href="#idea">See the question</a><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch">Code and lab notes</a></div>
     </div>
     <div class="card learn" aria-label="Animation: a learner reads your sessions, counts which experts light up, then predicts the ones to load into the GPU and RAM">
       <div class="lhead"><span class="k">The learner</span><span class="phase" id="ph">reading your coding sessions</span></div>
@@ -253,13 +253,13 @@ footer a { color: var(--acc); }
   </div>
 
   <section id="why">
-    <div class="eyebrow rv">Mixture of experts is here to stay</div>
+    <div class="eyebrow rv">Where open models are heading</div>
     <h2 class="xl rv">The best open models are <span class="acc">mixtures of experts.</span></h2>
     <div class="here">
       <div class="card rv">
         <p class="quote">"Dense is basically over."</p>
         <div class="who">Thom Wolf, Hugging Face co-founder, as Hugging Face released its MoE training handbook (800k GPU hours of experiments). <a href="https://x.com/Thom_Wolf/status/2118432475730882627">His post</a> · <a href="https://daily.dev/posts/hugging-face-releases-a-free-moe-training-handbook-after-800k-gpu-hours-of-experiments-bkvgav0yz">report</a></div>
-        <p class="tie">Their size is the problem. <b>Their sparsity is the opening:</b> each token wakes only a few experts, and your work keeps waking the same ones.</p>
+        <p class="tie">Their size is the problem. <b>Their sparsity is the opening:</b> each token wakes only a few experts, and we suspect your work keeps waking the same ones.</p>
       </div>
       <div class="facts">
         <div class="card fact rv"><div class="n">4 of 128</div><p>experts per token in gpt-oss-120b. The other 124 sit idle for that token.</p></div>
@@ -269,21 +269,21 @@ footer a { color: var(--acc); }
   </section>
 
   <section id="idea">
-    <div class="eyebrow rv">The idea</div>
-    <h2 class="rv">Everyone caches experts. <span class="acc">We predict them.</span></h2>
-    <p class="sub rv">Offloading experts to RAM and SSD isn't new; it gets you a few tokens a second. The new part is treating your expert set as something <b>learned</b>: a classifier trained on your sessions picks the experts before you start.</p>
+    <div class="eyebrow rv">The question</div>
+    <h2 class="rv">Engines cache experts. <span class="acc">Could we predict yours?</span></h2>
+    <p class="sub rv">Offloading experts to RAM and SSD isn't new, and caching works well. What we are exploring is treating your expert set as something <b>learned</b> from your sessions and placed before you start. We don't know yet where this beats good caching and where it doesn't; that is what the experiments are for.</p>
     <div class="vs">
       <div class="card them rv"><span class="k" style="color:var(--ink3)">Caching · reactive</span><h3>Wait for a miss, then fetch</h3>
         <div class="flow"><div><i>1</i>A token arrives</div><div class="bad"><i>!</i>Its expert isn't loaded</div><div class="bad"><i>…</i>Wait on the SSD</div><div><i>↺</i>Evict something, repeat</div></div>
-        <div class="verdict">knows nothing about you</div></div>
-      <div class="card us rv"><span class="k">Predicting · learned</span><h3>Know your experts before the first token</h3>
+        <div class="verdict">general-purpose, proven, not personal</div></div>
+      <div class="card us rv"><span class="k">Predicting · the experiment</span><h3>Know your experts before the first token</h3>
         <div class="flow"><div><i>1</i>Learn from your past sessions</div><div><i>2</i>Classify today's task</div><div><i>3</i>Place its experts: GPU, RAM, SSD</div><div><i>4</i>Run, mostly from fast memory</div></div>
-        <div class="verdict">personal · picked, not cached</div></div>
+        <div class="verdict">the hypothesis: personal, picked ahead</div></div>
     </div>
   </section>
 
   <section id="how">
-    <div class="eyebrow rv">How it works</div>
+    <div class="eyebrow rv">How we are trying it</div>
     <h2 class="rv">From your sessions to <span class="acc">your experts.</span></h2>
     <div class="pipe rv">
       <div class="card"><span class="k">1 · Sessions</span><h3>Your history</h3><p>Chats, code, tool calls you already have.</p>
@@ -294,7 +294,7 @@ footer a { color: var(--acc); }
       <div class="arr" aria-hidden="true">→</div>
       <div class="card"><span class="k">3 · Predict</span><h3>Your expert map</h3><p>The handful each layer needs for this task.</p><div class="grid" id="map-grid" aria-hidden="true"></div></div>
       <div class="arr" aria-hidden="true">→</div>
-      <div class="card"><span class="k">4 · Place</span><h3>Into memory tiers</h3><p>Predicted, not cached.</p>
+      <div class="card"><span class="k">4 · Place</span><h3>Into memory tiers</h3><p>Placed ahead of time.</p>
         <div class="tiers"><div>GPU<span class="dots" data-n="6" data-c="var(--acc)"></span></div><div>RAM<span class="dots" data-n="16" data-c="var(--ram)"></span></div><div>SSD<span class="dots" data-n="40" data-c="#3a3a3e"></span></div></div></div>
     </div>
 
@@ -316,9 +316,9 @@ footer a { color: var(--acc); }
   </section>
 
   <section id="weekly">
-    <div class="eyebrow rv">Malleable</div>
+    <div class="eyebrow rv">Keep personalizing</div>
     <h2 class="rv">New week, new work, <span class="acc">new experts.</span></h2>
-    <p class="sub rv">The model stays the same. What changes is which of its experts you keep close. Re-profile overnight when your work shifts. Profiling is fast: 5,000 tokens of your history, about four minutes on the 16 GB Mac, is enough for the 120B.</p>
+    <p class="sub rv">The idea: the model stays the same, and what changes is which of its experts you keep close, re-learned as your needs change. So far profiling looks cheap: 5,000 tokens of history, about four minutes on the 16 GB Mac, was enough for the 120B.</p>
     <div class="weeks">
       <div class="card rv"><span class="k">This week</span><h3>Python web app</h3><div class="grid wk" data-seed="3"></div><div class="when">profile A</div></div>
       <div class="card rv"><span class="k">The weekend</span><h3>Mojo kernels</h3><div class="grid wk" data-seed="11"></div><div class="when">profile B · re-picked overnight</div></div>
@@ -329,8 +329,8 @@ footer a { color: var(--acc); }
 
   <section id="learned">
     <div class="eyebrow rv"><span class="rtag big">New · Nov 6</span> Learned, not counted</div>
-    <h2 class="rv">Keep 8 of 64 experts. <span class="acc">Still get 66% of your code right.</span></h2>
-    <p class="sub rv">Counting which experts fire is not enough at small sizes. Two learned steps fix it: <b>search</b> for the set that stays closest to the full model, then train a tiny <b>adapter</b> for that set. Routing never leaves the loaded experts.</p>
+    <h2 class="rv">What if you keep 8 of 64 experts? <span class="acc">On a small model: 66% vs 69%.</span></h2>
+    <p class="sub rv">Counting which experts fire is not enough at small sizes. Two learned steps helped: <b>search</b> for the set that stays closest to the full model, then train a tiny <b>adapter</b> for that set. Routing never leaves the loaded experts.</p>
     <div class="lb">
       <div class="card rv" id="lbars">
         <span class="k">Next token of your real code, guessed right · 8 of 64 experts per layer</span>
@@ -363,8 +363,8 @@ footer a { color: var(--acc); }
 
   <section id="qwen4">
     <div class="eyebrow rv"><span class="rtag big">New · Nov 7</span> Qwen 4's architecture on a desktop</div>
-    <h2 class="rv">Your chat history picks the experts. <span class="acc">Faster than stock, on your work.</span></h2>
-    <p class="sub rv">Qwen3.8-Flash-Next (the Qwen 4 preview architecture: 125B MoE + a 51B n-gram table, 111 GB at 4-bit) on <b>2× RTX 3090 and 64 GB of RAM</b>. Three sets of tricks in one engine: <b>your profile</b> picks which experts live in VRAM, <b>0xSero's exclusive tiers</b> keep each expert in VRAM or RAM but never both, and <b>FreeToken's CPU-while-GPU</b> idea, ported into llama.cpp, computes the cold experts at the same time.</p>
+    <h2 class="rv">Can your chat history pick the experts? <span class="acc">On one desktop, it helped.</span></h2>
+    <p class="sub rv">Qwen3.8-Flash-Next (the Qwen 4 preview architecture: 125B MoE + a 51B n-gram table, 111 GB at 4-bit) on <b>2× RTX 3090 and 64 GB of RAM</b>: an early result, one machine and one person's history. We tried three sets of tricks in one engine: <b>your profile</b> picks which experts live in VRAM, <b>0xSero's exclusive tiers</b> keep each expert in VRAM or RAM but never both, and <b>FreeToken's CPU-while-GPU</b> idea, ported into llama.cpp, computes the cold experts at the same time.</p>
     <div class="lb">
       <div class="card rv" id="qbars">
         <span class="k">Decode, tokens per second · your held-out chat prompts</span>
@@ -392,20 +392,20 @@ footer a { color: var(--acc); }
     <div class="eyebrow rv">Does the evidence back it?</div>
     <h2 class="rv">Measured so far, <span class="two">wins and losses.</span></h2>
     <div class="card ev rv">
-      <div class="evr"><div class="c">Your experts are personal<small>Own coding profile vs one from your other work, 256-expert model, 25% cache</small></div><div class="n">+11 pts</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">The first prompt names the task<small>Session classifier, simulated on held-out sessions</small></div><div class="n">99–100%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">The right profile pays; the wrong one doesn't<small>Live profile swap takes 0.45 s</small></div><div class="n">+24%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">Placing predicted experts beats the default split<small>2×RTX 3090, exact output, vs llama.cpp's split by layer</small></div><div class="n">32% faster</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">120B on a 16 GB Mac, borrowing loaded neighbours<small>gpt-oss-120b, λ=1, +8.3% perplexity; λ=0.5: 1.46× for +2.0%</small></div><div class="n">1.04 → 2.96</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">Your experts drift<small>Share of the coding hot set that changed within weeks: re-profile</small></div><div class="n">25–28%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 8 of 64 experts, next code token right</small></div><div class="n">48% → 58%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 8 of 64 experts: 66.2% vs the full model's 69.1% (small model)</small></div><div class="n">66% vs 69%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">On the 120B, the right profile matters<small>Coding work steered to the coding profile vs the chat profile (16 experts per layer, λ=1): 474 vs 647 ms/token</small></div><div class="n">+8.7% vs +34.5%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">How many experts the 120B needs<small>8 per layer at λ=1: 2.45× for +5.4%; 32 per layer at λ=0.5: 1.35× for +0.5%</small></div><div class="n">8 of 128</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">The learner needs little history<small>120B profile from 5k tokens (~4 min of profiling on the Mac) matches one from 25k; a small-model bundle learns in ~90 s</small></div><div class="n">5k tokens</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">On Qwen 4's 512 tiny experts, the profile is personal<small>Own chat profile vs a coding profile, on held-out chat, 30% of experts resident</small></div><div class="n">79% vs 44%</div><span class="st y">Supported</span></div>
-      <div class="evr"><div class="c">Learned placement beats stock llama.cpp<small>Qwen3.8-Flash-Next, 2×RTX 3090 + 64 GB, your chat prompts; ~2× prompt speed too</small></div><div class="n">22.2 vs 17.7</div><span class="st y">Supported</span></div>
+      <div class="evr"><div class="c">Your experts are personal<small>Own coding profile vs one from your other work, 256-expert model, 25% cache</small></div><div class="n">+11 pts</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">The first prompt names the task<small>Session classifier, simulated on held-out sessions</small></div><div class="n">99–100%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">The right profile pays; the wrong one doesn't<small>Live profile swap takes 0.45 s</small></div><div class="n">+24%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">Placing predicted experts beats the default split<small>2×RTX 3090, exact output, vs llama.cpp's split by layer</small></div><div class="n">32% faster</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">120B on a 16 GB Mac, borrowing loaded neighbours<small>gpt-oss-120b, λ=1, +8.3% perplexity; λ=0.5: 1.46× for +2.0%</small></div><div class="n">1.04 → 2.96</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">Your experts drift<small>Share of the coding hot set that changed within weeks: re-profile</small></div><div class="n">25–28%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">Learned by search beats counting<small>Swap search scored by closeness to the full model; 8 of 64 experts, next code token right</small></div><div class="n">48% → 58%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">A tiny adapter per profile recovers the rest<small>2M parameters, 5 min; 8 of 64 experts: 66.2% vs the full model's 69.1% (small model)</small></div><div class="n">66% vs 69%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">The steered 120B writes working code<small>8 graded coding tasks with hidden tests, gpt-oss-120b on the 16 GB Mac, λ=1 and λ=0.5</small></div><div class="n">7/8 · 8/8</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">On the 120B, the right profile matters<small>Coding work steered to the coding profile vs the chat profile (16 experts per layer, λ=1): 474 vs 647 ms/token</small></div><div class="n">+8.7% vs +34.5%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">How many experts the 120B needs<small>8 per layer at λ=1: 2.45× for +5.4%; 32 per layer at λ=0.5: 1.35× for +0.5%</small></div><div class="n">8 of 128</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">The learner needs little history<small>120B profile from 5k tokens (~4 min of profiling on the Mac) matches one from 25k; a small-model bundle learns in ~90 s</small></div><div class="n">5k tokens</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">On Qwen 4's 512 tiny experts, the profile is personal<small>Own chat profile vs a coding profile, on held-out chat, 30% of experts resident</small></div><div class="n">79% vs 44%</div><span class="st y">Promising</span></div>
+      <div class="evr"><div class="c">Learned placement beats stock llama.cpp<small>Qwen3.8-Flash-Next, 2×RTX 3090 + 64 GB, your chat prompts; ~2× prompt speed too</small></div><div class="n">22.2 vs 17.7</div><span class="st y">Promising</span></div>
       <div class="evr"><div class="c">The same stack on text unlike your profile<small>Coding prompts with a chat profile; steering recovers it to 16.9 at a small quality cost</small></div><div class="n">10.0 vs 14.9</div><span class="st x">Failed</span></div>
       <div class="evr"><div class="c">Same answers as stock<small>Greedy word match with stock 0.49; another engine on the same model 0.35. A real coding test (pass@1) is next</small></div><div class="n">not exact</div><span class="st p">Not yet</span></div>
       <div class="evr"><div class="c">FreeToken's engine as is, on 64 GB<small>Its VRAM cache only holds experts that are also in RAM; ~25 GB of RAM free for them</small></div><div class="n">1.4 tok/s</div><span class="st x">Failed</span></div>
@@ -428,7 +428,7 @@ footer a { color: var(--acc); }
 
   <section id="next">
     <div class="eyebrow rv">Next</div>
-    <h2 class="rv">Where it goes from here.</h2>
+    <h2 class="rv">What we would try next. <span class="two">What would you try?</span></h2>
     <div class="open">
       <div class="card rv"><span class="k">Mojo · next week</span><h3>The expert layer in Mojo</h3><p>Hot experts on the GPUs and cold ones on the CPU in one launch per layer, with SIMD on the CPU side. It removes llama.cpp's step-by-step scheduling and the kernel crash on large prompt batches.</p></div>
       <div class="card rv"><span class="k">Quality</span><h3>A real coding test</h3><p>pass@1 on graded coding tasks, stack vs stock, before calling it the same intelligence.</p></div>
@@ -442,6 +442,7 @@ footer a { color: var(--acc); }
       <a class="more" href="journey.html">Research journey: day by day</a>
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/tree/main/docs/logs">Night-by-night lab notes</a>
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">Prior art</a>
+      <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/issues">Ideas, criticism, your own numbers: open an issue</a>
     </div>
   </section>
 </main>
