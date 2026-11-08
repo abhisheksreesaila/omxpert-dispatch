@@ -6,15 +6,59 @@
 
 Research journey, day by day: [docs/JOURNEY.md](docs/JOURNEY.md) →
 
-**An open experiment: can we learn, from your own sessions, which experts of a mixture-of-experts model you use, keep re-learning them as your needs change, and combine that with tricks others have shared (FreeToken, 0xSero's) into a better way to run big models locally?**
+## Vision
 
-We don't know yet. Below is the story so far, then the results, wins and failures. Ideas and criticism are welcome: [open an issue](https://github.com/abhisheksreesaila/omxpert-dispatch/issues).
+Big open models are now mixtures of experts, and running them at home is hard with RAM and GPUs scarce. Instead of tuning a whole model or agent to you, we're testing one level deeper: **can we learn which experts *your* work uses, from your own session history, keep those in fast memory, and keep re-learning them as your work changes?** Then we stack tricks others have shared on top and measure each one. An ongoing local-AI experiment.
 
-A 63 GB model (gpt-oss-120b, as released, MXFP4) on a 16 GB MacBook Pro (Apple M4). Exact model: 1.04 tok/s. Steered toward the coding profile: 2.96 tok/s on real text (λ=1, +8.3% perplexity).
+## Setup
 
-This is a research log, not a product. Every number here was measured on real hardware unless marked *simulated*. Failures are reported alongside wins.
+- **Profile:** run the model over your past sessions and count which experts fire (counts only, never the text). 2,000–5,000 tokens were enough.
+- **Machine 1:** 16 GB MacBook (M4), gpt-oss-120b (63 GB, 4× the RAM), llama.cpp + our patch, SSD as the cold tier.
+- **Machine 2:** Linux, 2× RTX 3090 + 64 GB RAM, Qwen3.8-Flash-Next (Qwen 4 preview, 111 GB), llama.cpp + our patch; FreeToken tried.
+
+## What worked
+
+**Machine 1: gpt-oss-120b on a 16 GB MacBook** (decode tok/s, one job)
+
+| | Step | From | tok/s | Quality |
+|---|---|---|---|---|
+| 0 | Baseline: exact model, experts read from the SSD | llama.cpp | 1.04 | exact |
+| 1 | Borrow a loaded expert, gently (λ 0.5) | idea: Cache-Prior (Skliar et al.) | 1.51 | +2.0% perplexity |
+| 2 | Borrow firmly (λ 1), toward your coding profile | omxpert | **2.96** (2.85×) | +8.3%; graded coding tasks 7/8 (8/8 at λ 0.5) |
+
+**Machine 2: Qwen3.8-Flash-Next on 2× RTX 3090 + 64 GB** (decode tok/s, held-out chat prompts)
+
+| | Step | From | tok/s |
+|---|---|---|---|
+| 0 | Baseline: stock llama.cpp, its own split by layer | llama.cpp | 17.7 (prompts 108) |
+| 1 | Your profile picks the VRAM experts; each expert in VRAM or RAM, never both | omxpert + 0xSero's exclusive tiers | 8.9 (first try: prompts re-read experts from disk, 3,148 page faults/token) |
+| 2 | Fix the prompt path (copy experts across GPUs, run each layer on its GPU) | omxpert | 21.2 (faults → 48/token) |
+| 3 | CPU computes cold experts while GPUs compute hot ones | FreeToken (FlashML), ported into llama.cpp | +2–5% |
+| = | All together vs stock, side by side (two interleaved server pairs) | | **22.2 / 21.1 vs 17.7 / 15.7**; prompts 218 / 202 vs 108 / 83 |
+
+Rows 1–3 are separate runs on a shared desktop; the last row is the fair comparison. 30% of experts served 79% of picks in new chats (someone else's profile: 44%). Not bit-exact on machine 2 (greedy word match with stock 0.49; another engine on the same model 0.35). Side experiment on small models: learning *which* 8 of 64 experts to keep plus a tiny adapter kept 66% of next code tokens right vs 69% for the full model (counting alone: 48%).
+
+## What didn't work
+
+| Tried | Result |
+|---|---|
+| FreeToken's engine as is, 64 GB of RAM (its GPU cache only holds RAM-resident experts) | 1.4 tok/s |
+| Your profile on unlike work (chat profile, coding prompts) | 10.0 vs 14.9 stock: re-profile when work changes |
+| Speculative decoding on the Mac | 0.27–0.75× |
+| Batching several real jobs on the Mac | slower than one at a time |
+| Layer-ahead prefetch and read pool (0xSero's) on the desktop | no gain (prefetch ~6% slower) |
+| Qwen's MTP draft head on the pinned stack | 21.7 vs 23.0 (×1.36 on stock llama.cpp) |
+| Plain pinning on the Mac, skipping missing experts, a learned per-expert bias | no gain |
+
+## It carries on: contribute
+
+Next: the expert layer in Mojo (hot experts on GPUs, cold on CPU, one pass per layer, SIMD) and a pass@1 quality test. Try it with your own history (`omxpert/profile.sh`, then `STACK=pinned omxpert/run.sh`), share numbers or suggest a trick: [open an issue](https://github.com/abhisheksreesaila/omxpert-dispatch/issues).
+
+Borrowed with thanks: [0xSero](https://github.com/0xSero) (exclusive tiers, prefetch, read pool), FreeToken by FlashML and the FreeToken-Kai fork, Skliar et al.'s [Cache-Prior](https://arxiv.org/abs/2412.00099), Qwen, llama.cpp / ggml, unsloth.
 
 ---
+
+# Lab detail (earlier write-ups)
 
 ## The idea
 
@@ -27,25 +71,6 @@ Engines already offload experts to RAM and SSD and cache them reactively, and th
 3. **Place** them before the first token: the core on the GPU, the neighbours in RAM, the rest on SSD. Picked, not cached.
 4. **Re-profile** when your work shifts (this week Python, the weekend Mojo). Same model, new expert set. No quantization, no retraining.
 5. When a rare token wants an expert that isn't loaded, **borrow a loaded neighbour** (a small router nudge, λ) instead of waiting on the SSD.
-
-## New (2026-11-07): trying it on Qwen 4's architecture, on one desktop
-
-Qwen3.8-Flash-Next (Qwen 4 preview architecture: 125B MoE + 51B n-gram table, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM. An early result: one machine, one person's history.
-We tried three sets of tricks in one engine: **your profile** (from your own chat history) picks the VRAM experts, **0xSero's exclusive
-tiers** keep each expert in VRAM or RAM but never both, and **FreeToken's CPU-while-GPU** hybrid, ported into llama.cpp's scheduler.
-
-| Your held-out chat prompts (2 interleaved server pairs) | Decode tok/s | Prompt tok/s |
-|---|---|---|
-| FreeToken as is (its 64 GB mode) | 1.4 | 17 |
-| Stock llama.cpp (its own fit) | 17.7 / 15.7 | 108 / 83 |
-| **Combined stack** (`STACK=pinned omxpert/run.sh`) | **22.2 / 21.1** | **218 / 202** |
-
-- **The profile is personal:** 30% of the experts serve 79% of picks in new conversations (ceiling 83%); someone else's coding profile serves 44%. 2,000 tokens of history are enough. Learn yours with `omxpert/profile.sh` (counts only, no text kept).
-- **Night 5's "pinning doesn't pay" was a bug:** prompt batches re-read GPU 1's pinned experts from disk (3,148 page faults per token). `EDX_XDEV` + `EDX_PREFILL_LOCAL` took it to 48.
-- **Small or no gain:** CPU-while-GPU (`EDX_OVERLAP`) +2–5% (the profile already puts ~94% of picks on the GPUs); MTP and layer-ahead prefetch none on the pinned stack.
-- **Costs:** on text unlike your profile it was slower than stock (coding prompts with a chat profile: 10.0 vs 14.9 tok/s; steering λ0.5 recovers 16.9). Not bit-exact: greedy word match with stock 0.49, vs 0.35 for FreeToken on the same model. A pass@1 coding test is next. First request after start is slow (2.7 tok/s) while RAM fills.
-- Night 5 (same box, exact stack `-lzm off` + MTP): 21–25 tok/s bit-exact; the CPU's expert math is the bottleneck (32 of 49 ms).
-- Details: [`docs/logs/report_night6.md`](docs/logs/report_night6.md), [before/after page](docs/night6_before_after.html), [journey Day 6](docs/JOURNEY.md). **Next:** the expert layer in Mojo.
 
 ## New (2026-11-06): learned expert sets and adapters
 
