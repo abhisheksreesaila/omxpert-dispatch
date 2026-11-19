@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>omxpert dispatch · omxlabs research · tune the experts to you</title>
-<meta name="description" content="An ongoing local-AI experiment: instead of tuning a whole model to you, can we learn which experts of a mixture-of-experts model your work uses and keep those close? What we tried, whose tricks we borrowed, and what each one did.">
+<title>omxpert dispatch · can a 125B MoE run well on a desktop?</title>
+<meta name="description" content="An open experiment: can Qwen3.8-Flash-Next (125B MoE) run well for local AI on 2× RTX 3090 + 64 GB RAM by keeping the experts my own work uses? One line per day, the biggest gains, and links to the full journey.">
 <style>
 @font-face { font-family: "Geist"; src: url(fonts/geist-variable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/geist-mono-variable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -17,186 +17,133 @@ html, body { margin: 0; background: var(--bg); color: var(--ink); }
 html { scroll-behavior: smooth; }
 body { font: 400 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
-section { padding: 96px 0 0; scroll-margin-top: 70px; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 28px; }
+section { padding: 72px 0 0; scroll-margin-top: 70px; }
 .eyebrow { font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
-h1 { font: 800 clamp(44px, 7vw, 96px)/.95 var(--sans); letter-spacing: -.05em; margin: 16px 0 0; max-width: 14ch; }
-h2 { font: 750 clamp(28px, 3.4vw, 42px)/1.06 var(--sans); letter-spacing: -.04em; margin: 12px 0 0; max-width: 24ch; }
-h3 { font: 700 19px/1.25 var(--sans); letter-spacing: -.02em; margin: 0; }
+h1 { font: 800 clamp(38px, 6vw, 72px)/1 var(--sans); letter-spacing: -.045em; margin: 14px 0 0; max-width: 17ch; }
+h2 { font: 750 clamp(26px, 3vw, 36px)/1.08 var(--sans); letter-spacing: -.035em; margin: 10px 0 0; }
 .acc { color: var(--acc); } .two { color: var(--dim); }
-.sub { font: 500 clamp(17px, 1.6vw, 20px)/1.5 var(--sans); color: var(--ink2); max-width: 720px; margin: 18px 0 0; }
+.sub { font: 500 clamp(17px, 1.6vw, 19px)/1.5 var(--sans); color: var(--ink2); max-width: 680px; margin: 16px 0 0; }
 .sub b { color: var(--ink); font-weight: 600; }
-.cap { font: 12.5px/1.6 var(--mono); color: var(--ink3); margin-top: 14px; }
-.k { font: 600 11.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--acc); display: block; margin-bottom: 10px; }
+.cap { font: 12.5px/1.6 var(--mono); color: var(--ink3); margin-top: 12px; }
 .rtag { font: 600 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent); padding: 4px 8px 3px; border-radius: 6px; }
-.card { background: var(--t1); border-radius: 24px; box-shadow: inset 0 0 0 1px var(--line); padding: 26px; }
-.card p { color: var(--ink2); font-size: 15px; margin: 8px 0 0; }
+.card { background: var(--t1); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--line); padding: 24px; }
 .more { color: var(--acc); font: 500 15.5px var(--sans); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .more::after { content: "›"; margin-left: 5px; }
-.card p a { color: var(--acc); }
 a:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; border-radius: 8px; }
 .cta { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--acc); color: var(--on-acc); font: 600 14px var(--sans); text-decoration: none; }
-/* header */
-.top { position: sticky; top: 0; z-index: 60; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 64px; padding: 0 24px; background: #000; border-bottom: 1px solid #161618; }
-.brand { display: flex; align-items: center; gap: 10px; font: 700 16px var(--sans); letter-spacing: -.02em; text-decoration: none; }
-.pill { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--t1); box-shadow: inset 0 0 0 1px var(--line); }
-.pill a { text-decoration: none; color: var(--ink2); font: 500 13.5px var(--sans); padding: 7px 14px; border-radius: 999px; white-space: nowrap; }
-.pill a:hover { color: var(--ink); } .pill a.on { color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, var(--t1)); }
-.top .cta { justify-self: end; }
-/* hero */
-.hero { padding-top: 80px; }
-.idea { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
-.idea .card.us { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 55%, transparent); }
-/* setup */
-.setup { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
-.setup dl { margin: 10px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14.5px; }
-.setup dt { color: var(--ink3); font: 12px/1.9 var(--mono); } .setup dd { margin: 0; color: var(--ink); }
-/* ladders */
-.ladder { margin-top: 32px; }
-.ladder h3 { margin-bottom: 4px; } .ladder .meta { color: var(--ink3); font: 12.5px var(--mono); margin-bottom: 18px; }
-.step { display: grid; grid-template-columns: 34px 1fr 230px 96px; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
-.step .n { font: 800 13px var(--mono); color: var(--ink3); }
-.step .what { font-size: 15.5px; } .step .what small { display: block; color: var(--ink3); font-size: 13px; margin-top: 2px; }
-.step .what .from { font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--acc); margin-left: 6px; white-space: nowrap; }
-.track { height: 26px; border-radius: 8px; background: var(--t2); overflow: hidden; }
-.fill { height: 100%; border-radius: 8px; background: color-mix(in srgb, var(--acc) 60%, #3a3a3e); transition: width 1.2s var(--ease); }
-.fill.base { background: #3a3a3e; } .fill.best { background: var(--acc); } .fill.bad { background: var(--bad); }
-.step .v { font: 750 20px var(--sans); letter-spacing: -.03em; text-align: right; font-variant-numeric: tabular-nums; }
-.step .v small { display: block; font: 500 11.5px var(--mono); color: var(--ink3); letter-spacing: 0; }
-.step.total { border-top: 1.5px solid color-mix(in srgb, var(--acc) 50%, transparent); }
-.step.total .what { font-weight: 650; } .step.total .v { color: var(--acc); }
-/* didn't work */
-.nope { margin-top: 32px; }
-.nr { display: grid; grid-template-columns: 1fr 170px; gap: 18px; padding: 14px 0; border-top: 1px solid var(--line); align-items: center; }
-.nr:first-of-type { border-top: 0; }
-.nr .c { font-size: 15.5px; } .nr .c small { display: block; color: var(--ink3); font-size: 13px; margin-top: 2px; }
-.nr .r { font: 700 17px var(--sans); color: var(--bad); text-align: right; }
-/* contribute */
-.join { margin: 32px 0 0; display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
-.links { display: flex; flex-wrap: wrap; gap: 4px 24px; margin-top: 10px; }
-footer { color: var(--ink3); font-size: 13.5px; padding: 80px 28px 60px; line-height: 1.7; }
-.rv { opacity: 1; }
+.top { position: sticky; top: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: #000; border-bottom: 1px solid #161618; }
+.brand { display: flex; align-items: center; gap: 10px; font: 700 16px var(--sans); letter-spacing: -.02em; text-decoration: none; white-space: nowrap; }
+.nav { display: flex; align-items: center; gap: 4px; }
+.nav a:not(.cta) { text-decoration: none; color: var(--ink2); font: 500 14px var(--sans); padding: 8px 10px; border-radius: 999px; min-height: 36px; display: inline-flex; align-items: center; }
+.nav a:not(.cta):hover, .nav a.on { color: var(--acc); }
+.idea { margin-top: 22px; }
+.idea p { margin: 0; color: var(--ink2); font-size: 17px; max-width: 70ch; } .idea p + p { margin-top: 10px; } .idea b { color: var(--ink); font-weight: 600; }
+.all { margin-top: 6px; }
+.gains { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+.gains li { display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: baseline; padding: 16px 20px; background: var(--t1); border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); }
+.gains .n { font: 800 24px/1.1 var(--sans); letter-spacing: -.035em; color: var(--acc); font-variant-numeric: tabular-nums; }
+.gains .t { color: var(--ink2); font-size: 15.5px; } .gains .t b { color: var(--ink); font-weight: 600; }
+.links { display: flex; flex-wrap: wrap; gap: 0 22px; margin-top: 14px; }
+footer { color: var(--ink3); font: 12.5px/1.8 var(--mono); padding: 72px 28px 56px; }
+footer a { color: var(--acc); }
+
+/* day table: one line per day, stacks on a phone */
+.days-t { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 15px; }
+.days-t th { text-align: left; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); padding: 0 12px 10px 0; }
+.days-t td { padding: 13px 12px 13px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.days-t .dd { white-space: nowrap; width: 92px; } .days-t .dd a { color: var(--ink); font-weight: 650; text-decoration: none; } .days-t .dd a:hover { color: var(--acc); }
+.days-t .dd small { display: block; font: 12px var(--mono); color: var(--ink3); margin-top: 2px; }
+.days-t .dw { color: var(--ink2); } .days-t .dr { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.days-t .ds { width: 96px; text-align: right; padding-right: 0; }
+.st { display: inline-block; font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px 2px; border-radius: 6px; }
+.st.kept { color: var(--on-acc); background: var(--acc); } .st.dropped { color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.st.retracted { color: var(--warm); box-shadow: inset 0 0 0 1px var(--warm); } .st.next { color: var(--ink2); box-shadow: inset 0 0 0 1px #4a4a50; }
+@media (max-width: 640px) {
+  .days-t thead { display: none; }
+  .days-t, .days-t tbody, .days-t tr, .days-t td { display: block; width: auto; }
+  .days-t tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .days-t td { border: 0; padding: 0; }
+  .days-t .dd { display: flex; gap: 10px; align-items: baseline; } .days-t .dd small { margin: 0; }
+  .days-t .ds { grid-column: 2; grid-row: 1; }
+  .days-t .dw, .days-t .dr { grid-column: 1 / -1; } .days-t .dr { white-space: normal; }
+}
 .js .rv { opacity: 0; transform: translateY(14px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
 .js .rv.in { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) { .js .rv { opacity: 1; transform: none; transition: none; } .fill { transition: none; } }
-@media (max-width: 860px) { .pill { display: none; } .top { grid-template-columns: 1fr auto; } .idea, .setup, .join { grid-template-columns: 1fr; }
-  .step { grid-template-columns: 26px 1fr 84px; } .step .track { grid-column: 2 / -1; grid-row: 2; } .nr { grid-template-columns: 1fr; } .nr .r { text-align: left; } }
-@media (max-width: 560px) { .wrap { padding: 0 18px; } .card { padding: 20px; border-radius: 20px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .js .rv { opacity: 1; transform: none; transition: none; } }
+@media (max-width: 560px) { .wrap { padding: 0 18px; } .top { padding: 0 14px; } .brand .rtag { display: none; } .nav a:not(.cta) { padding: 8px 7px; font-size: 13.5px; }
+  .gains li { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; } }
+@media (max-width: 440px) { .nav a[href="#mission"] { display: none; } .nav .cta.sm, .nav .cta { padding: 0 14px; } }
 </style>
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="#top"><span>omxpert dispatch</span> <span class="rtag">Research</span></a>
-  <nav class="pill" aria-label="Sections"><a href="#vision">Vision</a><a href="#story">Journey</a><a href="#setup">Setup</a><a href="#worked">What worked</a><a href="#didnt">What didn't</a><a href="#join">Contribute</a></nav>
-  <a class="cta" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
+  <nav class="nav" aria-label="Sections"><a href="#mission">Mission</a><a href="#tried">Tried</a><a href="journey.html#story">Story</a><a class="cta" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a></nav>
 </header>
 
 <main id="top" class="wrap">
-  <section id="vision" class="hero">
-    <div class="eyebrow"><span class="rtag">omxlabs research</span>&nbsp; an ongoing local-AI experiment · November 2026</div>
-    <h1>Tune the experts, <span class="acc">not the model.</span></h1>
-    <p class="sub">Big open models are now <b>mixtures of experts</b>: each word wakes only a few of thousands of experts. Running them at home is hard, with RAM and GPUs scarce and expensive. Our question goes one level deeper than personalizing an agent: <b>can we learn which experts <i>your</i> work uses, from your own session history, and keep those in fast memory?</b> And as your work changes, keep re-learning them.</p>
-    <div class="idea">
-      <div class="card"><span class="k" style="color:var(--ink3)">The usual way</span><h3>Tune the whole model or agent to you</h3><p>Fine-tune, prompt, add memory. The model still needs all its experts in memory, or it waits on the disk.</p></div>
-      <div class="card us"><span class="k">What we're testing</span><h3>Tune which experts you keep close</h3><p>Profile your sessions, put your experts in VRAM and RAM, leave the rest on disk. Then stack tricks others have shared on top, and measure each one.</p></div>
+  <section id="mission">
+    <div class="eyebrow"><span class="rtag">omxlabs research</span>&nbsp; an open experiment · November 2026</div>
+    <h1>Can a 125B MoE run well <span class="acc">on a desktop?</span></h1>
+    <p class="sub">Can we optimise <b>Qwen3.8-Flash-Next</b> (125B mixture of experts, the Qwen 4 preview architecture) for local AI? Today that means <b>2× RTX 3090 (48 GB of GPU memory) + 64 GB RAM</b>. Could smaller setups work too?</p>
+    <div class="card idea rv">
+      <p><b>The idea.</b> Mixture of experts is the baseline now: nearly every new model is one, and each token wakes only a few of its thousands of experts.</p>
+      <p>So why carry every generic expert at full cost? <b>Choose our own experts:</b> keep the ones my work actually uses, specialised and personal, close to the GPU, and make the rest cheap.</p>
     </div>
   </section>
 
-  <section id="story">
-    <div class="eyebrow rv">The story so far</div>
-    <h2 class="rv">How did 11 tok/s become ~50, <span class="acc">and what's the next question?</span></h2>
-    <p class="sub rv">Eight days, one question per scene, with the twists kept in. The full storyboard draws where the experts lived each day.</p>
-    <div class="card ladder rv" data-max="60">
-      <h3>Qwen3.8-Flash-Next on 2× RTX 3090, day by day</h3>
-      <div class="meta">decode, tokens per second · each row: what that day reached, and the reference it was measured against that day</div>
-      <div class="step"><span class="n">D5</span><div class="what">Qwen 4's architecture runs at all<small>stock llama.cpp: first run 11.0, warm reruns 21–24</small></div><div class="track"><div class="fill base" data-v="22.5"></div></div><div class="v">21–24<small>vs 11.0</small></div></div>
-      <div class="step"><span class="n">D6</span><div class="what">My chats pick the VRAM experts<small>vs stock llama.cpp, interleaved, my held-out chat prompts</small></div><div class="track"><div class="fill" data-v="22.2"></div></div><div class="v">22.2<small>vs 17.7</small></div></div>
-      <div class="step"><span class="n">D7</span><div class="what">The expert layer in Mojo <span class="from">omxpert-mojo</span><small>vs my pinned llama.cpp stack, back to back</small></div><div class="track"><div class="fill" data-v="41.0"></div></div><div class="v">41.0<small>vs 31.9</small></div></div>
-      <div class="step total"><span class="n">D7</span><div class="what">On llama.cpp's own CUDA stream<small>CUDA graphs on, ~1,700 more hot experts, 92% of picks on the GPUs</small></div><div class="track"><div class="fill best" data-v="53.9"></div></div><div class="v">49–54<small>vs 41.0</small></div></div>
-      <div class="step"><span class="n">D8</span><div class="what">Can the experts learn me, every night?<small>prune, repair, reward-train the router, lookups; a frozen gate decides</small></div><div class="track"><div class="fill base" data-v="0"></div></div><div class="v">?<small>from 19 Nov</small></div></div>
-    </div>
-    <p class="cap rv">References changed between days (prompts, cache state, desktop load), so each row compares against its own reference, not against the row above.</p>
-    <div class="links rv"><a class="more" href="journey.html#story">Watch the storyboard</a><a class="more" href="journey.html#nightly">The nightly frames</a><a class="more" href="https://abhisheksreesaila.github.io/omxpert-mojo/">The Mojo layer, frame by frame</a></div>
+  <section id="tried">
+    <div class="eyebrow rv">What we tried</div>
+    <h2 class="rv">One line per day, <span class="two">the latest five.</span></h2>
+    <table class="days-t rv">
+      <thead><tr><th>Day</th><th>What we tried</th><th>Result</th><th class="ds">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td class="dd"><a href="journey.html#d8">Day 8</a><small>Nov 18</small></td><td class="dw">Plan: prune, repair, reward-trained router, lookups, a nightly gate</td><td class="dr">no result yet</td><td class="ds"><span class="st next">next</span></td></tr>
+        <tr><td class="dd"><a href="journey.html#d7">Day 7</a><small>Nov 16–17</small></td><td class="dw">Expert layer in Mojo, on llama.cpp's own CUDA stream</td><td class="dr">31.9 → 49–54 tok/s</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="journey.html#d6">Day 6</a><small>Nov 6–7</small></td><td class="dw">Profile from my chats + exclusive tiers + CPU while GPU</td><td class="dr">17.7 → 22.2 tok/s vs stock</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="journey.html#d5">Day 5</a><small>Nov 6</small></td><td class="dw">Qwen 4 architecture on 2× 3090, every trick measured</td><td class="dr">21–24 tok/s, bit-exact</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="journey.html#d4">Day 4</a><small>Nov 6</small></td><td class="dw">Per-expert placement and two lanes on a 122B</td><td class="dr">2.4–3.6× slower by default</td><td class="ds"><span class="st dropped">dropped</span></td></tr>
+      </tbody>
+    </table>
+    <a class="more all rv" href="journey.html#days">All days</a>
   </section>
 
-  <section id="setup">
-    <div class="eyebrow rv">With that in mind</div>
-    <h2 class="rv">Our session history, two machines, <span class="acc">tricks borrowed from others.</span></h2>
-    <div class="setup">
-      <div class="card rv"><span class="k">Profile</span><h3>Your own sessions</h3><p>We run the model over past chat and coding sessions and count which experts fire. Only the counts are kept, never the text. 2,000–5,000 tokens of history were enough.</p></div>
-      <div class="card rv"><span class="k">Machine 1</span><h3>16 GB MacBook (M4)</h3><dl><dt>Model</dt><dd>gpt-oss-120b, 63 GB (4× the RAM)</dd><dt>Engine</dt><dd>llama.cpp + our patch</dd><dt>Cold tier</dt><dd>the SSD</dd></dl></div>
-      <div class="card rv"><span class="k">Machine 2</span><h3>Linux desktop</h3><dl><dt>Model</dt><dd>Qwen3.8-Flash-Next (Qwen 4 preview), 111 GB</dd><dt>Hardware</dt><dd>2× RTX 3090, 64 GB RAM</dd><dt>Engine</dt><dd>llama.cpp + our patch; FreeToken tried</dd></dl></div>
-    </div>
+  <section id="gains">
+    <div class="eyebrow rv">Biggest gains so far</div>
+    <ul class="gains rv">
+      <li><span class="n">79% vs 44%</span><span class="t"><b>A profile from my own chats</b>: its top 30% of experts serve 79% of picks in new conversations; someone else's profile serves 44% (Day 6).</span></li>
+      <li><span class="n">31.9 → 49–54</span><span class="t"><b>The Mojo expert layer</b>, tok/s decode on short chat, measured back to back against my pinned llama.cpp stack (Day 7).</span></li>
+      <li><span class="n">17.7 → 22.2</span><span class="t"><b>Profile + exclusive tiers + CPU while GPU</b>, tok/s decode against stock llama.cpp on my held-out chat prompts, interleaved servers (Day 6).</span></li>
+    </ul>
+    <p class="cap rv">Each number compares against its own reference on the same day; references changed between days.</p>
   </section>
 
-  <section id="worked">
-    <div class="eyebrow rv">What worked</div>
-    <h2 class="rv">Where we started, each trick, <span class="acc">where we are.</span></h2>
-
-    <div class="card ladder rv" data-max="3.2">
-      <h3>Machine 1 · gpt-oss-120b on a 16 GB MacBook</h3>
-      <div class="meta">decode, tokens per second · one job · quality as coding perplexity vs the exact model</div>
-      <div class="step"><span class="n">0</span><div class="what">Baseline: exact model, experts read from the SSD<small>llama.cpp, memory-mapped</small></div><div class="track"><div class="fill base" data-v="1.04"></div></div><div class="v">1.04<small>exact</small></div></div>
-      <div class="step"><span class="n">1</span><div class="what">Borrow a loaded expert, gently (λ 0.5) <span class="from">idea: Cache-Prior, Skliar et al.</span><small>when a token wants an expert that isn't in RAM, nudge it to one from your profile that is</small></div><div class="track"><div class="fill" data-v="1.51"></div></div><div class="v">1.51<small>+2.0% ppl</small></div></div>
-      <div class="step total"><span class="n">2</span><div class="what">Borrow firmly (λ 1), toward your coding profile <span class="from">omxpert</span><small>graded coding tasks with hidden tests: 7/8 passed (8/8 at λ 0.5)</small></div><div class="track"><div class="fill best" data-v="2.96"></div></div><div class="v">2.96<small>2.85× · +8.3% ppl</small></div></div>
-    </div>
-
-    <div class="card ladder rv" data-max="24">
-      <h3>Machine 2 · Qwen3.8-Flash-Next on 2× RTX 3090 + 64 GB</h3>
-      <div class="meta">decode, tokens per second · held-out chat prompts · the final row was measured side by side with the baseline</div>
-      <div class="step"><span class="n">0</span><div class="what">Baseline: stock llama.cpp, its own split by layer<small>half the layers on the GPUs, half on the CPU · prompts 108 tok/s</small></div><div class="track"><div class="fill base" data-v="17.7"></div></div><div class="v">17.7<small>stock</small></div></div>
-      <div class="step"><span class="n">1</span><div class="what">Your profile picks the VRAM experts, each expert in VRAM or RAM, never both <span class="from">omxpert + 0xSero's exclusive tiers</span><small>30% of experts served 79% of picks in new chats (someone else's profile: 44%). First try was slower: prompts re-read experts from disk, 3,148 page faults per token</small></div><div class="track"><div class="fill bad" data-v="8.9"></div></div><div class="v">8.9<small>prompts 9.8</small></div></div>
-      <div class="step"><span class="n">2</span><div class="what">Fix the prompt path: copy experts across GPUs, run each layer on the GPU that holds them <span class="from">omxpert</span><small>page faults 3,148 → 48 per token</small></div><div class="track"><div class="fill" data-v="21.2"></div></div><div class="v">21.2<small>prompts 93</small></div></div>
-      <div class="step"><span class="n">3</span><div class="what">CPU computes the cold experts while the GPUs compute the hot ones <span class="from">FreeToken (FlashML), ported into llama.cpp</span><small>small here, because the GPUs already hold most picks</small></div><div class="track"><div class="fill" data-v="22.0"></div></div><div class="v">+2–5%</div></div>
-      <div class="step total"><span class="n">=</span><div class="what">All together vs stock, side by side<small>two interleaved pairs of servers: 22.2 / 21.1 vs 17.7 / 15.7 · prompts 218 / 202 vs 108 / 83</small></div><div class="track"><div class="fill best" data-v="22.2"></div></div><div class="v">22.2<small>~+30% · 2× prompts</small></div></div>
-    </div>
-    <p class="cap rv">Rows 1–3 on machine 2 are separate runs on a shared desktop (they swing a few tok/s); the last row is the fair comparison. Not bit-exact on machine 2: greedy answers match stock word for word 49% of the time (another engine on the same model: 35%). A small-model side experiment: learning <i>which</i> 8 of 64 experts to keep, plus a tiny adapter, kept 66% of next code tokens right vs 69% for the full model (counting alone: 48%).</p>
-  </section>
-
-  <section id="didnt">
-    <div class="eyebrow rv">What didn't work</div>
-    <h2 class="rv">Tried, measured, <span class="two">set aside.</span></h2>
-    <div class="card nope rv">
-      <div class="nr"><div class="c">FreeToken's engine as is, on 64 GB of RAM<small>its GPU cache only holds experts that are also in RAM; with ~25 GB free, most picks came from disk</small></div><div class="r">1.4 tok/s</div></div>
-      <div class="nr"><div class="c">Your profile on unlike work<small>chat profile on coding prompts: slower than stock. Re-profile when your work changes</small></div><div class="r">10.0 vs 14.9</div></div>
-      <div class="nr"><div class="c">Speculative decoding on the Mac<small>checking k guesses costs ~k tokens: each guess wants different experts from the SSD</small></div><div class="r">0.27–0.75×</div></div>
-      <div class="nr"><div class="c">Batching several real jobs on the Mac<small>a benchmark said 7 tok/s; on real jobs they touched more experts than fit in RAM</small></div><div class="r">slower</div></div>
-      <div class="nr"><div class="c">Layer-ahead prefetch and a read pool (0xSero's) on the desktop<small>the experts were already in RAM; prefetch cost ~6% on the pinned stack</small></div><div class="r">no gain</div></div>
-      <div class="nr"><div class="c">Qwen's MTP draft head on the pinned stack<small>×1.36 on stock llama.cpp, but its VRAM pushed experts out on ours: 21.7 vs 23.0</small></div><div class="r">no gain</div></div>
-      <div class="nr"><div class="c">Plain pinning on the Mac, skipping missing experts, a learned per-expert bias<small>macOS's own page cache already does pinning; skipping costs quality with no speed; a learned bias matched one dial</small></div><div class="r">no gain</div></div>
-    </div>
-  </section>
-
-  <section id="join">
-    <div class="eyebrow rv">It carries on</div>
-    <h2 class="rv">An experiment in progress. <span class="acc">Your ideas welcome.</span></h2>
-    <div class="join">
-      <div class="card rv"><span class="k">Next</span><h3>Can the experts learn me, every night?</h3><p>The Mojo expert layer is in (Day 7, ~49–54 tok/s). Next, weights change from my own chats: prune and skip, repair with adapters, a reward-trained router and MoLE-style lookups, kept only if they pass a frozen test. One storyboard frame per night on the <a href="journey.html#nightly">journey page</a>.</p></div>
-      <div class="card rv"><span class="k">Contribute</span><h3>Try it, break it, tell us</h3><p>Run it with your own history (<code>omxpert/profile.sh</code>, then <code>STACK=pinned omxpert/run.sh</code>), share your numbers, or suggest a trick.</p>
-        <div class="links"><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/issues">Open an issue</a><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch">Code</a></div></div>
-    </div>
-    <div class="links rv" style="margin-top:22px">
-      <a class="more" href="journey.html">Day-by-day journey and storyboard</a>
-      <a class="more" href="night6_before_after.html">Desktop: every trick, before and after</a>
-      <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/tree/main/docs/logs">Lab notes</a>
+  <section id="learn">
+    <div class="eyebrow rv">Learn more</div>
+    <div class="links rv">
+      <a class="more" href="journey.html#story">Storyboard</a>
+      <a class="more" href="journey.html#days">Day-by-day journey</a>
+      <a class="more" href="https://abhisheksreesaila.github.io/omxpert-mojo/">Mojo explainer</a>
+      <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch#readme">GitHub README</a>
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">Prior art</a>
+      <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/issues">Contribute or open an issue</a>
     </div>
   </section>
 </main>
 
 <footer class="wrap">
-  Borrowed with thanks: <a href="https://github.com/0xSero">0xSero</a> (exclusive tiers, layer-ahead prefetch, read pool), FreeToken by FlashML and the FreeToken-Kai fork (CPU works while the GPU works), Skliar et al.'s <a href="https://arxiv.org/abs/2412.00099">Cache-Prior</a> (biasing the router toward loaded experts), Qwen (model, MTP head), llama.cpp / ggml, unsloth (GGUF).<br><br>
+  Borrowed with thanks: <a href="https://github.com/0xSero">0xSero</a>, FreeToken (FlashML) and the FreeToken-Kai fork, the Qwen team, <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://huggingface.co/unsloth">unsloth</a>, Modular (Mojo), and every author in the prior-art list.<br>
   omxpert dispatch · an omxlabs research project · MIT · <a href="https://github.com/abhisheksreesaila/omxpert-dispatch">github.com/abhisheksreesaila/omxpert-dispatch</a>
 </footer>
 
 <script>
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const fill = l => l.querySelectorAll(".fill").forEach(f => f.style.width = Math.max(3, f.dataset.v / l.dataset.max * 100) + "%");
-  const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; e.target.classList.add("in"); if (e.target.classList.contains("ladder")) fill(e.target); io.unobserve(e.target); }), { threshold: .12 });
-  document.querySelectorAll(".rv").forEach(el => reduce ? (el.classList.add("in"), el.classList.contains("ladder") && fill(el)) : io.observe(el));
-  const links = [...document.querySelectorAll(".pill a")], secs = links.map(a => document.querySelector(a.getAttribute("href")));
+  const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; e.target.classList.add("in"); io.unobserve(e.target); }), { threshold: .1 });
+  document.querySelectorAll(".rv").forEach(el => reduce ? el.classList.add("in") : io.observe(el));
+  const links = [...document.querySelectorAll('.nav a[href^="#"]')], secs = links.map(a => document.querySelector(a.getAttribute("href")));
   addEventListener("scroll", () => { let on = -1; secs.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 200) on = i; }); links.forEach((a, i) => a.classList.toggle("on", i === on)); }, { passive: true });
 })();
 </script>

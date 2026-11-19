@@ -119,7 +119,8 @@ footer a { color: var(--acc); }
 @keyframes rise { to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .rv, .rise > span { opacity: 1 !important; transform: none !important; animation: none !important; transition: none !important; } }
 
-@media (max-width: 1060px) { .pill { display: none; } .top { grid-template-columns: 1fr auto; } }
+@media (max-width: 1060px) { .top { grid-template-columns: auto 1fr auto; gap: 10px; } .pill { justify-self: end; } }
+@media (max-width: 560px) { .brand .nm, .brand .rtag { display: none; } .pill a { padding: 7px 9px; font-size: 13px; } .top { gap: 8px; } .cta.sm { padding: 0 14px; } }
 @media (max-width: 860px) {
   section { padding-top: 92px; } .hero { padding-top: 64px; }
   .how, .now, .credits, .outs, .split { grid-template-columns: 1fr; }
@@ -180,14 +181,41 @@ footer a { color: var(--acc); }
   .strip.nights .empty { flex: 1 0 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .js .sc .bar { transform: none !important; transition: none !important; } .strip { scroll-behavior: auto; } }
+
+/* day table: one line per day, stacks on a phone */
+.days-t { width: 100%; border-collapse: collapse; margin: 28px 0 0; font-size: 15px; }
+.days-t th { text-align: left; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); padding: 0 12px 10px 0; }
+.days-t td { padding: 13px 12px 13px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.days-t .dd { white-space: nowrap; width: 92px; } .days-t .dd a { color: var(--ink); font-weight: 650; text-decoration: none; } .days-t .dd a:hover { color: var(--acc); }
+.days-t .dd small { display: block; font: 12px var(--mono); color: var(--ink3); margin-top: 2px; }
+.days-t .dw { color: var(--ink2); } .days-t .dr { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.days-t .ds { width: 96px; text-align: right; padding-right: 0; }
+.st { display: inline-block; font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px 2px; border-radius: 6px; }
+.st.kept { color: var(--on-acc); background: var(--acc); } .st.dropped { color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.st.retracted { color: var(--warm); box-shadow: inset 0 0 0 1px var(--warm); } .st.next { color: var(--ink2); box-shadow: inset 0 0 0 1px #4a4a50; }
+@media (max-width: 640px) {
+  .days-t thead { display: none; }
+  .days-t, .days-t tbody, .days-t tr, .days-t td { display: block; width: auto; }
+  .days-t tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .days-t td { border: 0; padding: 0; }
+  .days-t .dd { display: flex; gap: 10px; align-items: baseline; } .days-t .dd small { margin: 0; }
+  .days-t .ds { grid-column: 2; grid-row: 1; }
+  .days-t .dw, .days-t .dr { grid-column: 1 / -1; } .days-t .dr { white-space: normal; }
+}
+
+/* latest five + show all (everything shows without JS) */
+.js .strip:not(.all) > .frame.old { display: none; }
+.showall { display: none; margin-top: 14px; }
+.js .showall { display: block; }
+.sa { font: 600 14px var(--sans); color: var(--acc); background: var(--t1); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 999px; padding: 0 18px; min-height: 44px; cursor: pointer; }
+.sa:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 50%, transparent); }
+.sa:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
 </style>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="index.html" aria-label="omxpert dispatch, cover page"><span class="mark" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></span><span class="nm">omxpert dispatch</span><span class="rtag">Research</span></a>
-  <nav class="pill" aria-label="Sections">
-    <a href="#idea">Idea</a><a href="#story">Storyboard</a><a href="#d1">Day 1</a><a href="#d2">Day 2</a><a href="#d3">Day 3</a><a href="#d4">Day 4</a><a href="#d5">Day 5</a><a href="#d6">Day 6</a><a href="#d7">Day 7</a><a href="#d8">Day 8</a><a href="#now">Where it stands</a><a href="#credits">Credits</a>
-  </nav>
+  <nav class="pill" aria-label="Sections"><a href="#story">Story</a><a href="#days">Days</a><a href="#now">Now</a></nav>
   <a class="get cta sm" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
 </header>
 
@@ -224,26 +252,26 @@ footer a { color: var(--acc); }
       <p class="cap">Decode, tokens per second. Each pair was measured the same day, on the same machine, against the reference named on its left. References changed between days (different prompts, cache state and desktop load), so compare bars within a row, not across rows. Days 1 to 4 used other models, so they stay off this chart.</p>
     </div>
 
-    <div class="strip" role="list">
-      <article class="frame rv">
+    <div class="strip" id="scenes" role="list">
+      <article class="frame old rv">
         <div class="sn"><span>Scene 01 · Day 1</span><span class="md">OLMoE · Qwen3.6-35B</span></div>
         <h4>Is the way I use experts personal at all?</h4>
         <svg viewBox="0 0 240 104" role="img" aria-label="Day 1: experts across gpu, ram"><rect class="bx g" x="8.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="10.0" y="13">GPU</text><circle class="h" cx="17.0" cy="31" r="3.4"/><circle class="h" cx="27.0" cy="31" r="3.4"/><circle class="h" cx="37.0" cy="31" r="3.4"/><circle class="h" cx="47.0" cy="31" r="3.4"/><circle class="h" cx="57.0" cy="31" r="3.4"/><circle class="h" cx="67.0" cy="31" r="3.4"/><circle class="h" cx="77.0" cy="31" r="3.4"/><circle class="c" cx="87.0" cy="31" r="3.4"/><rect class="bx r" x="124.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="126.0" y="13">RAM</text><circle class="h" cx="133.0" cy="31" r="3.4"/><circle class="h" cx="143.0" cy="31" r="3.4"/><circle class="h" cx="153.0" cy="31" r="3.4"/><circle class="c" cx="163.0" cy="31" r="3.4"/><circle class="c" cx="173.0" cy="31" r="3.4"/><circle class="c" cx="183.0" cy="31" r="3.4"/><circle class="c" cx="193.0" cy="31" r="3.4"/><circle class="c" cx="203.0" cy="31" r="3.4"/><circle class="c" cx="213.0" cy="31" r="3.4"/><circle class="c" cx="133.0" cy="41" r="3.4"/><circle class="c" cx="143.0" cy="41" r="3.4"/><circle class="c" cx="153.0" cy="41" r="3.4"/><circle class="c" cx="163.0" cy="41" r="3.4"/><circle class="c" cx="173.0" cy="41" r="3.4"/><circle class="c" cx="183.0" cy="41" r="3.4"/><circle class="c" cx="193.0" cy="41" r="3.4"/><circle class="c" cx="203.0" cy="41" r="3.4"/><circle class="c" cx="213.0" cy="41" r="3.4"/><circle class="c" cx="133.0" cy="51" r="3.4"/><circle class="c" cx="143.0" cy="51" r="3.4"/><circle class="c" cx="153.0" cy="51" r="3.4"/></svg>
         <dl><div><dt>The move</dt><dd>Count which experts fire on my work. Compare a fixed profile, LRU and the Belady ceiling, then nudge the router toward loaded experts.</dd></div><div class="ba"><dt>Before → after</dt><dd>Hits <b>69% → 94%</b> with steering (OLMoE, 25% of experts resident, +3.2% perplexity)</dd></div><div class="tw"><dt>The twist</dt><dd>A fixed profile lost to plain LRU by 12 to 28 points on hit rate. Recency mattered; steering mattered more.</dd></div></dl>
       </article>
-      <article class="frame rv">
+      <article class="frame old rv">
         <div class="sn"><span>Scene 02 · Day 2</span><span class="md">gpt-oss-120b · 16 GB Mac</span></div>
         <h4>Can a 63 GB model run on a 16 GB laptop?</h4>
         <svg viewBox="0 0 240 104" role="img" aria-label="Day 2: experts across ram 16 gb, ssd"><rect class="bx r" x="8.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="10.0" y="13">RAM 16 GB</text><circle class="h" cx="17.0" cy="31" r="3.4"/><circle class="h" cx="27.0" cy="31" r="3.4"/><circle class="h" cx="37.0" cy="31" r="3.4"/><circle class="h" cx="47.0" cy="31" r="3.4"/><circle class="h" cx="57.0" cy="31" r="3.4"/><circle class="h" cx="67.0" cy="31" r="3.4"/><circle class="c" cx="77.0" cy="31" r="3.4"/><circle class="c" cx="87.0" cy="31" r="3.4"/><rect class="bx s" x="124.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="126.0" y="13">SSD</text><circle class="h" cx="133.0" cy="31" r="3.4"/><circle class="h" cx="143.0" cy="31" r="3.4"/><circle class="c" cx="153.0" cy="31" r="3.4"/><circle class="c" cx="163.0" cy="31" r="3.4"/><circle class="c" cx="173.0" cy="31" r="3.4"/><circle class="c" cx="183.0" cy="31" r="3.4"/><circle class="c" cx="193.0" cy="31" r="3.4"/><circle class="c" cx="203.0" cy="31" r="3.4"/><circle class="c" cx="213.0" cy="31" r="3.4"/><circle class="c" cx="133.0" cy="41" r="3.4"/><circle class="c" cx="143.0" cy="41" r="3.4"/><circle class="c" cx="153.0" cy="41" r="3.4"/><circle class="c" cx="163.0" cy="41" r="3.4"/><circle class="c" cx="173.0" cy="41" r="3.4"/><circle class="c" cx="183.0" cy="41" r="3.4"/><circle class="c" cx="193.0" cy="41" r="3.4"/><circle class="c" cx="203.0" cy="41" r="3.4"/><circle class="c" cx="213.0" cy="41" r="3.4"/><circle class="c" cx="133.0" cy="51" r="3.4"/><circle class="c" cx="143.0" cy="51" r="3.4"/><circle class="c" cx="153.0" cy="51" r="3.4"/><circle class="c" cx="163.0" cy="51" r="3.4"/><circle class="c" cx="173.0" cy="51" r="3.4"/><circle class="c" cx="183.0" cy="51" r="3.4"/><circle class="c" cx="193.0" cy="51" r="3.4"/><circle class="c" cx="203.0" cy="51" r="3.4"/><circle class="c" cx="213.0" cy="51" r="3.4"/><circle class="c" cx="133.0" cy="61" r="3.4"/></svg>
         <dl><div><dt>The move</dt><dd>Experts live on the SSD, four times the RAM. Steer toward experts already in RAM.</dd></div><div class="ba"><dt>Before → after</dt><dd><b>1.04 tok/s → 2.85×</b> with firm steering (+8.3% perplexity); 1.46× at +2.0%</dd></div><div class="tw"><dt>The twist</dt><dd>“7 tok/s for 8 jobs” came from a random-token benchmark. Real jobs ran ~1.0 tok/s in total. Corrected the same day.</dd></div></dl>
       </article>
-      <article class="frame rv">
+      <article class="frame old rv">
         <div class="sn"><span>Scene 03 · Day 3</span><span class="md">OLMoE · Granite 3B</span></div>
         <h4>Can the expert set be learned instead of counted?</h4>
         <svg viewBox="0 0 240 104" role="img" aria-label="Day 3: experts across loaded 8/64, not loaded"><rect class="bx g" x="8.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="10.0" y="13">LOADED 8/64</text><circle class="h" cx="17.0" cy="31" r="3.4"/><circle class="h" cx="27.0" cy="31" r="3.4"/><circle class="h" cx="37.0" cy="31" r="3.4"/><circle class="h" cx="47.0" cy="31" r="3.4"/><circle class="h" cx="57.0" cy="31" r="3.4"/><circle class="h" cx="67.0" cy="31" r="3.4"/><circle class="h" cx="77.0" cy="31" r="3.4"/><circle class="h" cx="87.0" cy="31" r="3.4"/><rect class="bx s" x="124.0" y="20" width="108.0" height="78" rx="9"/><text class="bl" x="126.0" y="13">NOT LOADED</text><circle class="c" cx="133.0" cy="31" r="3.4"/><circle class="c" cx="143.0" cy="31" r="3.4"/><circle class="c" cx="153.0" cy="31" r="3.4"/><circle class="c" cx="163.0" cy="31" r="3.4"/><circle class="c" cx="173.0" cy="31" r="3.4"/><circle class="c" cx="183.0" cy="31" r="3.4"/><circle class="c" cx="193.0" cy="31" r="3.4"/><circle class="c" cx="203.0" cy="31" r="3.4"/><circle class="c" cx="213.0" cy="31" r="3.4"/><circle class="c" cx="133.0" cy="41" r="3.4"/><circle class="c" cx="143.0" cy="41" r="3.4"/><circle class="c" cx="153.0" cy="41" r="3.4"/><circle class="c" cx="163.0" cy="41" r="3.4"/><circle class="c" cx="173.0" cy="41" r="3.4"/><circle class="c" cx="183.0" cy="41" r="3.4"/><circle class="c" cx="193.0" cy="41" r="3.4"/><circle class="c" cx="203.0" cy="41" r="3.4"/><circle class="c" cx="213.0" cy="41" r="3.4"/><circle class="c" cx="133.0" cy="51" r="3.4"/><circle class="c" cx="143.0" cy="51" r="3.4"/><circle class="c" cx="153.0" cy="51" r="3.4"/><circle class="c" cx="163.0" cy="51" r="3.4"/><circle class="c" cx="173.0" cy="51" r="3.4"/><circle class="c" cx="183.0" cy="51" r="3.4"/></svg>
         <dl><div><dt>The move</dt><dd>Swap-search the expert set against the full model (KL), then train a 2M-parameter adapter for that set.</dd></div><div class="ba"><dt>Before → after</dt><dd>Next token right <b>47.8% → 66.2%</b> (counted set → learned set + adapter; full model 69.1%)</dd></div><div class="tw"><dt>The twist</dt><dd>The first 4-of-64 numbers leaked through the mask. Corrected in public: 62.3%, not 64.0%.</dd></div></dl>
       </article>
-      <article class="frame rv">
+      <article class="frame old rv">
         <div class="sn"><span>Scene 04 · Day 4</span><span class="md">Qwen3.5-122B</span></div>
         <h4>Can one 122B serve a fast lane and a background lane?</h4>
         <svg viewBox="0 0 240 104" role="img" aria-label="Day 4: experts across gpu 0, gpu 1, ram"><rect class="bx g" x="8.0" y="20" width="69.3" height="78" rx="9"/><text class="bl" x="10.0" y="13">GPU 0</text><circle class="h" cx="17.0" cy="31" r="3.4"/><circle class="h" cx="27.0" cy="31" r="3.4"/><circle class="h" cx="37.0" cy="31" r="3.4"/><circle class="h" cx="47.0" cy="31" r="3.4"/><circle class="h" cx="57.0" cy="31" r="3.4"/><circle class="h" cx="17.0" cy="41" r="3.4"/><circle class="h" cx="27.0" cy="41" r="3.4"/><circle class="h" cx="37.0" cy="41" r="3.4"/><rect class="bx g" x="85.3" y="20" width="69.3" height="78" rx="9"/><text class="bl" x="87.3" y="13">GPU 1</text><circle class="h" cx="94.3" cy="31" r="3.4"/><circle class="h" cx="104.3" cy="31" r="3.4"/><circle class="h" cx="114.3" cy="31" r="3.4"/><circle class="h" cx="124.3" cy="31" r="3.4"/><circle class="h" cx="134.3" cy="31" r="3.4"/><circle class="h" cx="94.3" cy="41" r="3.4"/><circle class="h" cx="104.3" cy="41" r="3.4"/><circle class="h" cx="114.3" cy="41" r="3.4"/><rect class="bx r" x="162.7" y="20" width="69.3" height="78" rx="9"/><text class="bl" x="164.7" y="13">RAM</text><circle class="h" cx="171.7" cy="31" r="3.4"/><circle class="h" cx="181.7" cy="31" r="3.4"/><circle class="c" cx="191.7" cy="31" r="3.4"/><circle class="c" cx="201.7" cy="31" r="3.4"/><circle class="c" cx="211.7" cy="31" r="3.4"/><circle class="c" cx="171.7" cy="41" r="3.4"/><circle class="c" cx="181.7" cy="41" r="3.4"/><circle class="c" cx="191.7" cy="41" r="3.4"/><circle class="c" cx="201.7" cy="41" r="3.4"/><circle class="c" cx="211.7" cy="41" r="3.4"/><circle class="c" cx="171.7" cy="51" r="3.4"/><circle class="c" cx="181.7" cy="51" r="3.4"/><circle class="c" cx="191.7" cy="51" r="3.4"/><circle class="c" cx="201.7" cy="51" r="3.4"/><circle class="c" cx="211.7" cy="51" r="3.4"/><circle class="c" cx="171.7" cy="61" r="3.4"/><circle class="c" cx="181.7" cy="61" r="3.4"/><circle class="c" cx="191.7" cy="61" r="3.4"/><circle class="c" cx="201.7" cy="61" r="3.4"/><circle class="c" cx="211.7" cy="61" r="3.4"/><circle class="c" cx="171.7" cy="71" r="3.4"/><circle class="c" cx="181.7" cy="71" r="3.4"/></svg>
@@ -280,7 +308,8 @@ footer a { color: var(--acc); }
         <dl><div><dt>The move</dt><dd>Prune and skip, repair with adapters, retrain the router with a reward, try MoLE-style lookups. A nightly loop keeps only what passes.</dd></div><div class="ba"><dt>Before → after</dt><dd><b>~50 tok/s → ?</b> Every change has to pass a gate on a frozen test set first</dd></div><div class="tw"><dt>The twist</dt><dd>Published work warns that fewer misses usually cost quality. Will the gate let anything through?</dd></div></dl>
       </article>
     </div>
-    <p class="cap rv">On a phone, swipe the strip sideways. Every number links back to a day card below and its lab notes.</p>
+    <div class="showall"><button type="button" class="sa" data-for="scenes" aria-expanded="false">Show all 9 scenes</button></div>
+    <p class="cap rv">The latest five scenes first. On a phone, swipe the strip sideways. Every number links back to a day card below and its lab notes.</p>
 
     <div id="nightly">
       <div class="eyebrow rv" style="margin-top:56px">The nightly loop</div>
@@ -291,7 +320,21 @@ footer a { color: var(--acc); }
 
   <section id="days" aria-label="The days">
     <div class="eyebrow rv">The journey</div>
-    <h2 class="rv">One card per day, <span class="acc">in order.</span></h2>
+    <h2 class="rv">One line per day, <span class="acc">then the full cards.</span></h2>
+    <table class="days-t rv" aria-label="One line per day, newest first">
+      <thead><tr><th>Day</th><th>What we tried</th><th>Result</th><th class="ds">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td class="dd"><a href="#d8">Day 8</a><small>Nov 18</small></td><td class="dw">Plan: prune, repair, reward-trained router, lookups, a nightly gate</td><td class="dr">no result yet</td><td class="ds"><span class="st next">next</span></td></tr>
+        <tr><td class="dd"><a href="#d7">Day 7</a><small>Nov 16–17</small></td><td class="dw">Expert layer in Mojo, on llama.cpp's own CUDA stream</td><td class="dr">31.9 → 49–54 tok/s</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="#d6">Day 6</a><small>Nov 6–7</small></td><td class="dw">Profile from my chats + exclusive tiers + CPU while GPU</td><td class="dr">17.7 → 22.2 tok/s vs stock</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="#d5">Day 5</a><small>Nov 6</small></td><td class="dw">Qwen 4 architecture on 2× 3090, every trick measured</td><td class="dr">21–24 tok/s, bit-exact</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="#d4">Day 4</a><small>Nov 6</small></td><td class="dw">Per-expert placement and two lanes on a 122B</td><td class="dr">2.4–3.6× slower by default</td><td class="ds"><span class="st dropped">dropped</span></td></tr>
+        <tr><td class="dd"><a href="#d3">Day 3</a><small>Nov 5–6</small></td><td class="dw">Learned expert set + adapter (OLMoE, 8 of 64)</td><td class="dr">47.8% → 66.2% next token</td><td class="ds"><span class="st kept">kept</span></td></tr>
+        <tr><td class="dd"><a href="#d2">Day 2</a><small>Nov 4–5</small></td><td class="dw">A 63 GB model on a 16 GB Mac; batching real jobs</td><td class="dr">“7 tok/s for 8 jobs” → ~1.0</td><td class="ds"><span class="st retracted">retracted</span></td></tr>
+        <tr><td class="dd"><a href="#d1">Day 1</a><small>Nov 3–4</small></td><td class="dw">Is expert use personal? Profile vs LRU, then steering</td><td class="dr">hits 69% → 94% steered</td><td class="ds"><span class="st kept">kept</span></td></tr>
+      </tbody>
+    </table>
+    <p class="cap rv">Newest first. Each day links to its full card below.</p>
     <div class="days">
 
       <!-- DAY 1 -->
@@ -629,6 +672,15 @@ footer a { color: var(--acc); }
 
 <script>
 (() => {
+  const wire = b => b.addEventListener("click", () => { const st = document.getElementById(b.dataset.for); if (!st) return;
+    const on = st.classList.toggle("all"); b.setAttribute("aria-expanded", on);
+    const n = st.querySelectorAll(".frame").length; b.textContent = on ? "Show the latest 5" : "Show all " + n + (b.dataset.for === "nights" ? " nights" : " scenes"); });
+  document.querySelectorAll(".sa").forEach(wire);
+  window.__wireShowAll = wire;
+})();
+</script>
+<script>
+(() => {
   const box = document.getElementById("nights"); if (!box || !window.fetch) return;
   const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
   const num = (v, d) => (typeof v === "number" && isFinite(v)) ? v.toFixed(d) : "n/a";
@@ -651,7 +703,10 @@ footer a { color: var(--acc); }
     const files = (ix.nights || []).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
     if (!files.length) return;
     return Promise.all(files.map(f => fetch("nights/" + f, { cache: "no-store" }).then(r => r.json()).catch(() => null))).then(ns => {
-      ns = ns.filter(Boolean); if (!ns.length) return; box.textContent = ""; ns.forEach(n => box.append(frame(n)));
+      ns = ns.filter(Boolean); if (!ns.length) return; box.textContent = "";
+      ns.forEach((n, i) => { const f = frame(n); if (i < ns.length - 5) f.classList.add("old"); box.append(f); });
+      if (ns.length > 5) { const w = document.createElement("div"); w.className = "showall"; const b = document.createElement("button"); b.type = "button"; b.className = "sa"; b.dataset.for = "nights";
+        b.setAttribute("aria-expanded", "false"); b.textContent = "Show all " + ns.length + " nights"; w.append(b); box.after(w); if (window.__wireShowAll) window.__wireShowAll(b); }
     });
   }).catch(() => {});
 })();

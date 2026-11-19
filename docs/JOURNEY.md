@@ -16,6 +16,21 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 
 ---
 
+## One line per day (newest first)
+
+| Day | What we tried | Result | Verdict |
+|---|---|---|---|
+| Day 8 · Nov 18 | Plan: prune, repair, reward-trained router, lookups, a nightly gate | no result yet | next |
+| Day 7 · Nov 16–17 | Expert layer in Mojo, on llama.cpp's own CUDA stream | 31.9 → 49–54 tok/s | kept |
+| Day 6 · Nov 6–7 | Profile from my chats + exclusive tiers + CPU while GPU | 17.7 → 22.2 tok/s vs stock | kept |
+| Day 5 · Nov 6 | Qwen 4 architecture on 2× 3090, every trick measured | 21–24 tok/s, bit-exact | kept |
+| Day 4 · Nov 6 | Per-expert placement and two lanes on a 122B | 2.4–3.6× slower by default | dropped |
+| Day 3 · Nov 5–6 | Learned expert set + adapter (OLMoE, 8 of 64) | 47.8% → 66.2% next token | kept |
+| Day 2 · Nov 4–5 | A 63 GB model on a 16 GB Mac; batching real jobs | “7 tok/s for 8 jobs” → ~1.0 | retracted |
+| Day 1 · Nov 3–4 | Is expert use personal? Profile vs LRU, then steering | hits 69% → 94% steered | kept |
+
+---
+
 ## The storyboard, in one table
 
 The [site version](https://abhisheksreesaila.github.io/omxpert-dispatch/journey.html#story) draws each scene with where the experts lived that day.
