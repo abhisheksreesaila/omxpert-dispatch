@@ -210,6 +210,11 @@ footer a { color: var(--acc); }
 .sa { font: 600 14px var(--sans); color: var(--acc); background: var(--t1); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 999px; padding: 0 18px; min-height: 44px; cursor: pointer; }
 .sa:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 50%, transparent); }
 .sa:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.giants { list-style: none; padding: 0; margin: 18px 0 0; border-top: 1px solid var(--line); }
+.giants li { display: grid; grid-template-columns: 230px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; color: var(--ink2); }
+.giants .gw { color: var(--ink); font-weight: 650; text-decoration: none; } .giants .gw:hover { color: var(--acc); }
+.giants span a { color: var(--acc); }
+@media (max-width: 640px) { .giants li { grid-template-columns: 1fr; gap: 2px; } }
 </style>
 </head>
 <body>
@@ -632,25 +637,21 @@ footer a { color: var(--acc); }
   </section>
 
   <section id="credits">
-    <div class="eyebrow rv">Credits</div>
-    <h2 class="rv">Built on other people's <span class="acc">good work.</span></h2>
-    <div class="credits">
-      <div class="card big rv"><span class="k">Systems ideas</span><h3><a href="https://github.com/0xSero">0xSero</a>, glm-flash-lite</h3>
-        <p>0xSero runs GLM-5.3-Flash at 19.5 tok/s on one RTX 3090. The systems tricks we re-implemented inside llama.cpp are his: the parallel read pool, layer-ahead prefetch, exclusive VRAM/RAM tiers, staged prefill, CPU/GPU overlap, and no per-layer host sync. Two of them (overlap, no host sync) need an engine change and are not built yet, so his core speedups are still untested here.</p>
-        <div class="split">
-          <div class="his"><b>His</b>The systems tricks: how bytes move and how CPU and GPU share the work.</div>
-          <div><b>Ours</b>The profiling, the learned prediction (expert sets, adapters, next-layer guesser) and the steering.</div>
-        </div>
-      </div>
-      <div class="cl">
-        <div class="card rv"><span class="k">Model</span><h3>The Qwen team</h3><p>The model, its MTP draft head and the n-gram table.</p></div>
-        <div class="card rv"><span class="k">Engine and files</span><h3>llama.cpp / ggml and unsloth</h3><p><a href="https://github.com/ggml-org/llama.cpp">llama.cpp and ggml</a>, the engine every run used. <a href="https://huggingface.co/unsloth">unsloth</a>, for the GGUF quants.</p></div>
-        <div class="card rv"><span class="k">Day 6</span><h3>FlashML / FreeToken authors</h3><p>The hybrid CPU+GPU executor (and yuuki-net's FreeToken-Kai fork) whose idea Day 6 ported into llama.cpp.</p></div>
-        <div class="card rv"><span class="k">Day 7</span><h3>Modular: Mojo and MAX</h3><p>The language and compiler the Day 7 expert layer is written in, and the Modular source we read to write it.</p></div>
-        <div class="card rv"><span class="k">Day 8</span><h3>The papers the nightly loop builds on</h3><p><a href="https://arxiv.org/abs/2605.27081">ReMoE</a>, <a href="https://neurips.cc/virtual/2026/164462">CAR-MoE</a>, <a href="https://arxiv.org/pdf/2602.11192">melinoe</a>, <a href="https://tldr.takara.ai/p/2608.18261">the locality negative result</a>, <a href="https://arxiv.org/abs/2510.13999">REAP</a>, <a href="https://arxiv.org/abs/2503.15798">MoLE</a> and Hugging Face's <a href="https://huggingface.co/blog/harness-hub/harness-adapters">harness adapters</a>.</p></div>
-        <div class="card rv"><span class="k">Prior art</span><h3>The researchers before us</h3><p>Every author in <a href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">PRIOR_ART.md</a>: ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, ReMoE, DoMoE and the rest.</p></div>
-      </div>
-    </div>
+    <div class="eyebrow rv">Standing on the shoulders of giants</div>
+    <h2 class="rv">What we borrowed, <span class="two">and from whom.</span></h2>
+    <ul class="giants rv">
+      <li><a class="gw" href="https://github.com/0xSero">0xSero · glm-flash-lite</a><span>The systems tricks: parallel read pool, layer-ahead prefetch, exclusive VRAM/RAM tiers, staged prefill, CPU/GPU overlap, no per-layer host sync (Days 4–6).</span></li>
+      <li><a class="gw" href="https://github.com/FlashML-org/FreeToken">FreeToken (FlashML) + FreeToken-Kai</a><span>The hybrid idea: the CPU computes cold experts while the GPU computes hot ones (Day 6, and the core of the Mojo layer). Fork: <a href="https://github.com/yuuki-net/FreeToken-Kai">yuuki-net/FreeToken-Kai</a>.</span></li>
+      <li><a class="gw" href="https://github.com/ggml-org/llama.cpp">llama.cpp / ggml</a><span>The engine every run used, and the custom-op hook the Mojo expert layer plugs into.</span></li>
+      <li><a class="gw" href="https://huggingface.co/Qwen">The Qwen team</a><span>The model, its MTP draft head and the n-gram lookup table.</span></li>
+      <li><a class="gw" href="https://huggingface.co/unsloth">unsloth</a><span>The GGUF quants (UD-Q4_K_XL) that fit 125B on this desktop.</span></li>
+      <li><a class="gw" href="https://www.modular.com/mojo">Modular · Mojo and MAX</a><span>The language and compiler of the Day 7 expert layer (GPU and CPU from one source).</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2605.27081">ReMoE · CAR-MoE · melinoe</a><span>Router-locality training: the plan for the reward-trained router. Also <a href="https://neurips.cc/virtual/2026/164462">CAR-MoE</a>, <a href="https://arxiv.org/pdf/2602.11192">melinoe</a>, and the honest <a href="https://tldr.takara.ai/p/2608.18261">negative result</a> on locality vs quality.</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2510.13999">REAP (Cerebras)</a><span>Router-weighted expert pruning from calibration data: the plan for deleting experts my work doesn't use.</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2503.15798">MoLE · Mixture of Lookup Experts</a><span>Experts as lookup tables that live off the GPU: the plan for CPU lookups.</span></li>
+      <li><a class="gw" href="https://huggingface.co/blog/harness-hub/harness-adapters">Hugging Face · harness adapters</a><span>The recipe for reward training: GRPO + rank-32 LoRA + an efficiency bonus in the reward.</span></li>
+      <li><a class="gw" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">The prior-art list</a><span>Expert offloading and placement before us: ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, DoMoE and more.</span></li>
+    </ul>
   </section>
 </main>
 

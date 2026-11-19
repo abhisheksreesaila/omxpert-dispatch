@@ -55,7 +55,7 @@ footer a { color: var(--acc); }
 .days-t .dd { white-space: nowrap; width: 92px; } .days-t .dd a { color: var(--ink); font-weight: 650; text-decoration: none; } .days-t .dd a:hover { color: var(--acc); }
 .days-t .dd small { display: block; font: 12px var(--mono); color: var(--ink3); margin-top: 2px; }
 .days-t .dw { color: var(--ink2); } .days-t .dr { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.days-t .ds { width: 96px; text-align: right; padding-right: 0; }
+.days-t .ds { width: 128px; text-align: right; padding-right: 0; white-space: nowrap; }
 .st { display: inline-block; font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px 2px; border-radius: 6px; }
 .st.kept { color: var(--on-acc); background: var(--acc); } .st.dropped { color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
 .st.retracted { color: var(--warm); box-shadow: inset 0 0 0 1px var(--warm); } .st.next { color: var(--ink2); box-shadow: inset 0 0 0 1px #4a4a50; }
@@ -74,13 +74,71 @@ footer a { color: var(--acc); }
 @media (max-width: 560px) { .wrap { padding: 0 18px; } .top { padding: 0 14px; } .brand .rtag { display: none; } .nav a:not(.cta) { padding: 8px 7px; font-size: 13.5px; }
   .gains li { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; } }
 @media (max-width: 440px) { .nav a[href="#mission"] { display: none; } .nav .cta.sm, .nav .cta { padding: 0 14px; } }
+
+/* rows open a drawer with that day's full card (cloned from journey.html, the one place the detail lives) */
+.days-t tbody tr { cursor: pointer; transition: background .2s var(--ease); }
+.days-t tbody tr:hover { background: var(--t1); }
+.days-t tbody tr:hover .dd a { color: var(--acc); }
+.chev { display: inline-block; margin-left: 10px; color: var(--ink3); font: 500 18px/1 var(--sans); transition: transform .3s var(--spring), color .2s; }
+.days-t tbody tr:hover .chev { color: var(--acc); transform: translateX(3px); }
+.nowrow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.nowrow .card { padding: 20px 22px; } .nowrow .card.us { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 50%, transparent); }
+.nowrow .n { font: 800 30px/1 var(--sans); letter-spacing: -.04em; color: var(--acc); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.nowrow .n small { font: 600 12px var(--mono); letter-spacing: .06em; color: var(--ink2); margin-left: 6px; }
+.nowrow p { margin: 0; color: var(--ink2); font-size: 15px; } .nowrow p b { color: var(--ink); font-weight: 600; }
+.k { font: 600 11.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--acc); margin-bottom: 10px; display: block; }
+.giants { list-style: none; padding: 0; margin: 18px 0 0; border-top: 1px solid var(--line); }
+.giants li { display: grid; grid-template-columns: 230px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; color: var(--ink2); }
+.giants .gw { color: var(--ink); font-weight: 650; text-decoration: none; } .giants .gw:hover { color: var(--acc); }
+.giants span a { color: var(--acc); }
+@media (max-width: 640px) { .nowrow { grid-template-columns: 1fr; } .giants li { grid-template-columns: 1fr; gap: 2px; } }
+
+.scrim { position: fixed; inset: 0; z-index: 90; background: rgb(0 0 0 / .62); opacity: 0; transition: opacity .3s var(--ease); }
+.scrim.on { opacity: 1; }
+.drawer { position: fixed; z-index: 91; top: 0; bottom: 0; right: -40px; width: min(560px, calc(100vw - 40px)); padding-right: 40px;
+  background: var(--t1); box-shadow: -1px 0 0 var(--line), -24px 0 60px rgb(0 0 0 / .5); display: flex; flex-direction: column;
+  transform: translateX(105%); transition: transform .55s var(--spring); }
+.drawer.on { transform: none; }
+.drawer[hidden], .scrim[hidden] { display: none; }
+.dh { display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 24px; border-bottom: 1px solid var(--line); }
+.dh .t { font: 600 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); flex: 1; }
+.dh a { color: var(--acc); font: 500 14px var(--sans); text-decoration: none; white-space: nowrap; }
+.x { width: 44px; height: 44px; border-radius: 999px; border: 0; background: var(--t2); color: var(--ink); font: 500 20px/1 var(--sans); cursor: pointer; }
+.x:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.db { overflow-y: auto; overscroll-behavior: contain; padding: 22px 24px 40px; flex: 1; }
+.db .dcard { background: none; box-shadow: none; padding: 0; }
+.db h3 { font: 700 23px/1.2 var(--sans); letter-spacing: -.03em; margin: 0; }
+.db .tried { color: var(--ink2); font-size: 15.5px; margin: 12px 0 0; } .db .tried b { color: var(--ink); font-weight: 600; }
+.db .outs { display: grid; gap: 10px; margin-top: 18px; }
+.db .out { background: var(--t2); border-radius: 16px; padding: 16px; }
+.db .ol { display: block; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; color: var(--acc); }
+.db .no .ol { color: var(--bad); } .db .back .ol { color: var(--warm); }
+.db .out ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.db .out li { position: relative; padding-left: 16px; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.db .out li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 2px; background: var(--acc); }
+.db .no li::before { background: var(--bad); } .db .back li::before { background: var(--warm); }
+.db .out li b { color: var(--ink); font-weight: 600; }
+.db .lesson { margin-top: 10px; border-radius: 16px; padding: 16px 18px; background: color-mix(in srgb, var(--acc) 8%, var(--t1)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 45%, transparent); }
+.db .lesson p { margin: 0; color: var(--ink); font: 500 16px/1.45 var(--sans); }
+.db .files { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 12px; align-items: center; }
+.db .files .fl { font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); }
+.db .files .more { font: 500 14px var(--mono); } .db .files .np { font: 13px var(--mono); color: var(--ink3); }
+.db code { font: 13px var(--mono); background: var(--t2); padding: 1px 5px; border-radius: 5px; }
+.db a { color: var(--acc); }
+@media (max-width: 640px) {
+  .drawer { top: auto; right: 0; left: 0; bottom: -40px; width: auto; height: calc(88vh + 40px); padding: 0 0 40px; border-radius: 22px 22px 0 0;
+    box-shadow: 0 -1px 0 var(--line), 0 -24px 60px rgb(0 0 0 / .5); transform: translateY(105%); }
+  .dh { padding-left: 18px; } .db { padding: 18px 18px 32px; }
+}
+@media (prefers-reduced-motion: reduce) { .drawer, .scrim, .chev { transition: none; } }
+html.lock, html.lock body { overflow: hidden; }
 </style>
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="#top"><span>omxpert dispatch</span> <span class="rtag">Research</span></a>
-  <nav class="nav" aria-label="Sections"><a href="#mission">Mission</a><a href="#tried">Tried</a><a href="journey.html#story">Story</a><a class="cta" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a></nav>
+  <nav class="nav" aria-label="Sections"><a href="#mission">Mission</a><a href="#tried">Days</a><a href="journey.html#story">Story</a><a class="cta" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a></nav>
 </header>
 
 <main id="top" class="wrap">
@@ -96,18 +154,29 @@ footer a { color: var(--acc); }
 
   <section id="tried">
     <div class="eyebrow rv">What we tried</div>
-    <h2 class="rv">One line per day, <span class="two">the latest five.</span></h2>
+    <h2 class="rv">One line per day, <span class="two">newest first.</span></h2>
     <table class="days-t rv">
       <thead><tr><th>Day</th><th>What we tried</th><th>Result</th><th class="ds">Verdict</th></tr></thead>
       <tbody>
-        <tr><td class="dd"><a href="journey.html#d8">Day 8</a><small>Nov 18</small></td><td class="dw">Plan: prune, repair, reward-trained router, lookups, a nightly gate</td><td class="dr">no result yet</td><td class="ds"><span class="st next">next</span></td></tr>
-        <tr><td class="dd"><a href="journey.html#d7">Day 7</a><small>Nov 16–17</small></td><td class="dw">Expert layer in Mojo, on llama.cpp's own CUDA stream</td><td class="dr">31.9 → 49–54 tok/s</td><td class="ds"><span class="st kept">kept</span></td></tr>
-        <tr><td class="dd"><a href="journey.html#d6">Day 6</a><small>Nov 6–7</small></td><td class="dw">Profile from my chats + exclusive tiers + CPU while GPU</td><td class="dr">17.7 → 22.2 tok/s vs stock</td><td class="ds"><span class="st kept">kept</span></td></tr>
-        <tr><td class="dd"><a href="journey.html#d5">Day 5</a><small>Nov 6</small></td><td class="dw">Qwen 4 architecture on 2× 3090, every trick measured</td><td class="dr">21–24 tok/s, bit-exact</td><td class="ds"><span class="st kept">kept</span></td></tr>
-        <tr><td class="dd"><a href="journey.html#d4">Day 4</a><small>Nov 6</small></td><td class="dw">Per-expert placement and two lanes on a 122B</td><td class="dr">2.4–3.6× slower by default</td><td class="ds"><span class="st dropped">dropped</span></td></tr>
+        <tr data-day="d8"><td class="dd"><a class="open" href="journey.html#d8">Day 8</a><small>Nov 18</small></td><td class="dw">Plan: prune, repair, reward-trained router, lookups, a nightly gate</td><td class="dr">no result yet</td><td class="ds"><span class="st next">next</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d7"><td class="dd"><a class="open" href="journey.html#d7">Day 7</a><small>Nov 16–17</small></td><td class="dw">Expert layer in Mojo, on llama.cpp's own CUDA stream</td><td class="dr">31.9 → 49–54 tok/s</td><td class="ds"><span class="st kept">kept</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d6"><td class="dd"><a class="open" href="journey.html#d6">Day 6</a><small>Nov 6–7</small></td><td class="dw">Profile from my chats + exclusive tiers + CPU while GPU</td><td class="dr">17.7 → 22.2 tok/s vs stock</td><td class="ds"><span class="st kept">kept</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d5"><td class="dd"><a class="open" href="journey.html#d5">Day 5</a><small>Nov 6</small></td><td class="dw">Qwen 4 architecture on 2× 3090, every trick measured</td><td class="dr">21–24 tok/s, bit-exact</td><td class="ds"><span class="st kept">kept</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d4"><td class="dd"><a class="open" href="journey.html#d4">Day 4</a><small>Nov 6</small></td><td class="dw">Per-expert placement and two lanes on a 122B</td><td class="dr">2.4–3.6× slower by default</td><td class="ds"><span class="st dropped">dropped</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d3"><td class="dd"><a class="open" href="journey.html#d3">Day 3</a><small>Nov 5–6</small></td><td class="dw">Learned expert set + adapter (OLMoE, 8 of 64)</td><td class="dr">47.8% → 66.2% next token</td><td class="ds"><span class="st kept">kept</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d2"><td class="dd"><a class="open" href="journey.html#d2">Day 2</a><small>Nov 4–5</small></td><td class="dw">A 63 GB model on a 16 GB Mac; batching real jobs</td><td class="dr">“7 tok/s for 8 jobs” → ~1.0</td><td class="ds"><span class="st retracted">retracted</span><span class="chev" aria-hidden="true">›</span></td></tr>
+        <tr data-day="d1"><td class="dd"><a class="open" href="journey.html#d1">Day 1</a><small>Nov 3–4</small></td><td class="dw">Is expert use personal? Profile vs LRU, then steering</td><td class="dr">hits 69% → 94% steered</td><td class="ds"><span class="st kept">kept</span><span class="chev" aria-hidden="true">›</span></td></tr>
       </tbody>
     </table>
-    <a class="more all rv" href="journey.html#days">All days</a>
+    <p class="cap rv">Tap a day for the full story: what we tried, what worked, what failed, what we took back.</p>
+  </section>
+
+  <section id="now">
+    <div class="eyebrow rv">Where it stands</div>
+    <div class="nowrow rv">
+      <div class="card us"><div class="n">49–54<small>tok/s decode</small></div><p><b>Today's best:</b> my Mojo expert layer inside llama.cpp, short chat, against 31.9 for my pinned llama.cpp stack measured back to back. After a 25K-token prompt: 38 vs 27.</p></div>
+      <div class="card"><span class="k">Next</span><p><b>The nightly loop:</b> prune, repair, reward-train the router and try lookups on my own chats, and keep only what passes a frozen test. One storyboard frame per night.</p></div>
+    </div>
   </section>
 
   <section id="gains">
@@ -131,20 +200,98 @@ footer a { color: var(--acc); }
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/issues">Contribute or open an issue</a>
     </div>
   </section>
+  <section id="giants">
+    <div class="eyebrow rv">Standing on the shoulders of giants</div>
+    <h2 class="rv">What we borrowed, <span class="two">and from whom.</span></h2>
+    <ul class="giants rv">
+      <li><a class="gw" href="https://github.com/0xSero">0xSero · glm-flash-lite</a><span>The systems tricks: parallel read pool, layer-ahead prefetch, exclusive VRAM/RAM tiers, staged prefill, CPU/GPU overlap, no per-layer host sync (Days 4–6).</span></li>
+      <li><a class="gw" href="https://github.com/FlashML-org/FreeToken">FreeToken (FlashML) + FreeToken-Kai</a><span>The hybrid idea: the CPU computes cold experts while the GPU computes hot ones (Day 6, and the core of the Mojo layer). Fork: <a href="https://github.com/yuuki-net/FreeToken-Kai">yuuki-net/FreeToken-Kai</a>.</span></li>
+      <li><a class="gw" href="https://github.com/ggml-org/llama.cpp">llama.cpp / ggml</a><span>The engine every run used, and the custom-op hook the Mojo expert layer plugs into.</span></li>
+      <li><a class="gw" href="https://huggingface.co/Qwen">The Qwen team</a><span>The model, its MTP draft head and the n-gram lookup table.</span></li>
+      <li><a class="gw" href="https://huggingface.co/unsloth">unsloth</a><span>The GGUF quants (UD-Q4_K_XL) that fit 125B on this desktop.</span></li>
+      <li><a class="gw" href="https://www.modular.com/mojo">Modular · Mojo and MAX</a><span>The language and compiler of the Day 7 expert layer (GPU and CPU from one source).</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2605.27081">ReMoE · CAR-MoE · melinoe</a><span>Router-locality training: the plan for the reward-trained router. Also <a href="https://neurips.cc/virtual/2026/164462">CAR-MoE</a>, <a href="https://arxiv.org/pdf/2602.11192">melinoe</a>, and the honest <a href="https://tldr.takara.ai/p/2608.18261">negative result</a> on locality vs quality.</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2510.13999">REAP (Cerebras)</a><span>Router-weighted expert pruning from calibration data: the plan for deleting experts my work doesn't use.</span></li>
+      <li><a class="gw" href="https://arxiv.org/abs/2503.15798">MoLE · Mixture of Lookup Experts</a><span>Experts as lookup tables that live off the GPU: the plan for CPU lookups.</span></li>
+      <li><a class="gw" href="https://huggingface.co/blog/harness-hub/harness-adapters">Hugging Face · harness adapters</a><span>The recipe for reward training: GRPO + rank-32 LoRA + an efficiency bonus in the reward.</span></li>
+      <li><a class="gw" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">The prior-art list</a><span>Expert offloading and placement before us: ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, DoMoE and more.</span></li>
+    </ul>
+  </section>
 </main>
 
 <footer class="wrap">
-  Borrowed with thanks: <a href="https://github.com/0xSero">0xSero</a>, FreeToken (FlashML) and the FreeToken-Kai fork, the Qwen team, <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://huggingface.co/unsloth">unsloth</a>, Modular (Mojo), and every author in the prior-art list.<br>
   omxpert dispatch · an omxlabs research project · MIT · <a href="https://github.com/abhisheksreesaila/omxpert-dispatch">github.com/abhisheksreesaila/omxpert-dispatch</a>
 </footer>
+
+<div class="scrim" hidden></div>
+<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t" hidden>
+  <div class="dh"><span class="t" id="dr-t">Day</span><a id="dr-full" href="journey.html#days">Full page ›</a><button class="x" type="button" aria-label="Close">×</button></div>
+  <div class="db" id="dr-b"></div>
+</aside>
 
 <script>
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; e.target.classList.add("in"); io.unobserve(e.target); }), { threshold: .1 });
-  document.querySelectorAll(".rv").forEach(el => reduce ? el.classList.add("in") : io.observe(el));
+  const still = reduce || new URLSearchParams(location.search).has("static");
+  document.querySelectorAll(".rv").forEach(el => still ? el.classList.add("in") : io.observe(el));
   const links = [...document.querySelectorAll('.nav a[href^="#"]')], secs = links.map(a => document.querySelector(a.getAttribute("href")));
   addEventListener("scroll", () => { let on = -1; secs.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 200) on = i; }); links.forEach((a, i) => a.classList.toggle("on", i === on)); }, { passive: true });
+})();
+</script>
+<script>
+(() => {
+  // the full day cards live in journey.html: fetch it once and clone the card into the drawer
+  const q = new URLSearchParams(location.search);
+  const scrim = document.querySelector(".scrim"), dr = document.querySelector(".drawer"), body = document.getElementById("dr-b");
+  const title = document.getElementById("dr-t"), full = document.getElementById("dr-full"), x = dr.querySelector(".x");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let docP = null, opener = null;
+  const load = () => docP || (docP = fetch("journey.html").then(r => { if (!r.ok) throw 0; return r.text(); })
+    .then(t => new DOMParser().parseFromString(t, "text/html")).catch(() => { docP = null; return null; }));
+  const card = (doc, id) => {
+    const art = doc && doc.getElementById(id); if (!art) return null;
+    const c = art.querySelector(".dcard"); if (!c) return null;
+    const n = c.cloneNode(true); n.classList.remove("rv");
+    n.querySelectorAll(".rv").forEach(e => e.classList.remove("rv"));
+    n.querySelectorAll('a[href^="#"]').forEach(a => a.setAttribute("href", "journey.html" + a.getAttribute("href")));
+    const d = art.querySelector(".dnum"); const sm = d && d.querySelector("small"), when = sm && sm.firstChild ? sm.firstChild.textContent : "";
+    const lbl = d ? d.querySelector("b").textContent + (when ? " · " + when : "") : id;
+    return { n, lbl: "Day " + lbl.replace(/\s+/g, " ").trim() };
+  };
+  const focusables = () => [...dr.querySelectorAll('a[href], button, [tabindex]:not([tabindex="-1"])')].filter(e => e.offsetParent !== null);
+  const onKey = e => {
+    if (e.key === "Escape") { e.preventDefault(); close(); return; }
+    if (e.key !== "Tab") return;
+    const f = focusables(); if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  };
+  async function open(id, from) {
+    const doc = await load(); const c = card(doc, id);
+    if (!c) { location.href = "journey.html#" + id; return; }
+    opener = from || document.activeElement;
+    body.replaceChildren(c.n); body.scrollTop = 0; title.textContent = c.lbl; full.href = "journey.html#" + id;
+    scrim.hidden = dr.hidden = false; document.documentElement.classList.add("lock");
+    requestAnimationFrame(() => requestAnimationFrame(() => { scrim.classList.add("on"); dr.classList.add("on"); }));
+    x.focus({ preventScroll: true }); addEventListener("keydown", onKey);
+    const u = new URL(location); u.searchParams.set("open", id); history.replaceState(null, "", u);
+  }
+  function close() {
+    scrim.classList.remove("on"); dr.classList.remove("on"); removeEventListener("keydown", onKey);
+    document.documentElement.classList.remove("lock");
+    setTimeout(() => { scrim.hidden = dr.hidden = true; }, reduce ? 0 : 420);
+    if (opener && opener.focus) opener.focus({ preventScroll: true });
+    const u = new URL(location); u.searchParams.delete("open"); history.replaceState(null, "", u);
+  }
+  x.addEventListener("click", close); scrim.addEventListener("click", close);
+  document.querySelectorAll(".days-t tr[data-day]").forEach(tr => {
+    const a = tr.querySelector("a.open");
+    tr.addEventListener("click", e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); open(tr.dataset.day, a); });
+    a.setAttribute("aria-haspopup", "dialog");
+  });
+  addEventListener("pointerover", e => { if (e.target.closest && e.target.closest(".days-t")) load(); }, { once: true });
+  if (/^d\d+$/.test(q.get("open") || "")) open(q.get("open"));
 })();
 </script>
 </body>
