@@ -32,5 +32,6 @@ The values above illustrate the shape only; they are not a measurement.
 | `tried[].verdict` | string | `promoted` or `rejected` |
 | `tried[].kl` | number | KL to the untouched model on the FROZEN set |
 | `tried[].top1`, `tried[].pass1`, `tried[].gpu_hit` | number | fractions 0 to 1 |
+| any number field | number or `null` | `null` = not measured (the arm failed to run); the page shows n/a |
 | `tried[].note`, `picture` | string | ≤ 200 chars, written by the loop, never copied from a chat |
 | `sources[]` | object | `title` ≤ 120 chars, `url` starting `https://` |
