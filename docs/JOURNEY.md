@@ -16,6 +16,26 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 
 ---
 
+## The storyboard, in one table
+
+The [site version](https://abhisheksreesaila.github.io/omxpert-dispatch/journey.html#story) draws each scene with where the experts lived that day.
+
+| Scene | Question | Before → after | The twist |
+|---|---|---|---|
+| 1 · Day 1 | Is the way I use experts personal at all? | hits 69% → 94% with steering (OLMoE, 25% resident, +3.2% perplexity) | a fixed profile lost to plain LRU by 12 to 28 points |
+| 2 · Day 2 | Can a 63 GB model run on a 16 GB laptop? | 1.04 tok/s → 2.85× with firm steering (+8.3% perplexity) | "7 tok/s for 8 jobs" came from random tokens; real jobs ~1.0 |
+| 3 · Day 3 | Can the expert set be learned instead of counted? | next token right 47.8% → 66.2% (full model 69.1%) | the first 4-of-64 numbers leaked through the mask |
+| 4 · Day 4 | Can one 122B serve a fast lane and a background lane? | fast lane 11.2 alone, 12.3 next to a yielding job | per-expert placement lost 2.4 to 3.6× by default |
+| 5 · Day 5 | Does Qwen 4's architecture run on this desktop at all? | 11 → 21–24 tok/s stock (first run → warm reruns); MTP 27.6 opt-in | "steering is 2× faster" was against a fault-heavy run: ~+10% |
+| 6 · Day 6 | Can my own chats decide what sits in VRAM? | 17.7 → 22.2 tok/s vs stock, interleaved | slower than stock on text unlike my chats |
+| 7 · Day 7 night | What if the expert layer is ours, in Mojo? | 31.9 → 41.0 tok/s vs my pinned llama.cpp stack | batched verify falsified (cold set grows 3.6× over 5 tokens) |
+| 8 · Day 7 midday | What if the GPU never waits for the CPU? | 41.0 → 49.3 / 53.9 tok/s | the overhead to remove was 1.2 ms, not 5; one unexplained power-off |
+| 9 · Day 8, next | Can the experts learn me, every night? | ~50 tok/s → ? | published work warns fewer misses usually cost quality |
+
+Speed pairs were measured the same day against the reference named; references changed between days, so compare within a row, not across rows. From 19 Nov the nightly loop adds one frame per night (files in [`nights/`](nights/SCHEMA.md)).
+
+---
+
 ## Day 1 · Nov 3–4 (night 1) 🔍 Is the way you use experts personal at all?
 
 **Tried.** Traced which experts fire on the owner's own work (coding, chat, math, tool calls, docs) on three models: OLMoE-1B-7B in PyTorch, Qwen3.6-35B-A3B in llama.cpp, and gpt-oss-20b in Modular MAX. Replayed caches in Mojo to compare a fixed profile with LRU and with the Belady ceiling. Then nudged the router toward experts already loaded (steering).
@@ -176,13 +196,63 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 
 📄 [report_night6.md](logs/report_night6.md) · [journal_night6.md](logs/journal_night6.md) · [decisions_night6.md](logs/decisions_night6.md) · [before / after](night6_before_after.html)
 
+## Day 7 · Nov 16–17 (Mojo, autopilot) 🔥 What if the expert layer is ours, written in Mojo, below the usual level?
+
+**Tried.** About 2,700 lines of Mojo for Qwen3.8-Flash-Next's expert layer: our own Q4_K / Q5_1 GPU kernels read straight from the GGUF, the same source compiled for the CPU, hot experts on the GPUs and cold ones on the CPU, handed over through a pinned-memory mailbox. Plugged into llama.cpp as a custom op overnight, then moved onto llama.cpp's own CUDA stream the next morning. Measured back to back against my pinned llama.cpp stack from Day 6.
+
+✅ **Worked**
+- **MoE time per token: 8.6 ms vs llama.cpp's 24.7** (all 48 layers, one token, my profile, quiet machine).
+- **Same source, same bits:** CPU and GPU give bit-identical expert output; the GPU kernel reads at 61% of VRAM bandwidth.
+- **Overnight, end to end: 41.0 vs 31.9 tok/s** decode on short chat; a 25K-token prompt 177 vs 163 tok/s.
+- **On llama.cpp's own stream (CUDA graphs on) plus ~1,700 more hot experts (92% of picks): 49.3 / 53.9 tok/s** decode, 181 / 187 tok/s on a 25K prompt, 37.8 / 38.1 tok/s decode after it (pinned stack 26.9). A needle at 26.5K tokens was found.
+- Greedy text is byte-identical across the host path, the in-stream path and the bigger hot set.
+- CPU workers as persistent threads: 1 µs per dispatch instead of 236 µs.
+
+❌ **Failed**
+- **Batched CPU verify (milestone 6) falsified:** cold experts don't repeat across consecutive tokens; the cold set grows 3.6× over 5 tokens. Left failing with the evidence, not redefined.
+- **MTP speculation stays off:** 64–79% of drafts accepted, but verifying 3 tokens costs ~2.4× the MoE work here. Lost at short context (35.7 vs 44.6), won slightly after 25K (32.7 vs 30.7).
+- Short prompts trailed llama.cpp overnight (185 vs 224 tok/s); after the in-stream change they sit level (221 / 258 vs 224).
+- GLM-5.3-Flash only as a projection (14.5 tok/s): it needs ~120–200 GB of disk.
+
+↩️ **Retracted**
+- **The "5 ms of split overhead" I planned to remove was arithmetic.** Measured: ggml's CPU stops cost 1.2 ms per token; the rest was Mojo waiting on its own GPU after every layer. The in-stream change targeted that instead.
+- Two timing checks failed once under heavy desktop load while the bits stayed identical; they now wait for a quiet machine. Thresholds unchanged.
+
+💡 **The lesson:** measure before building. The overhead I set out to remove was 1.2 ms, not 5, and a 30-line probe proved the short path before any plumbing. Also: at 10:37 the PC powered off mid-benchmark, cause still unknown (GPUs peaked at 280 W).
+
+📄 [report.md](https://github.com/abhisheksreesaila/omxpert-mojo/blob/master/docs/report.md) · [journal.md](https://github.com/abhisheksreesaila/omxpert-mojo/blob/master/docs/journal.md) · [decisions.md](https://github.com/abhisheksreesaila/omxpert-mojo/blob/master/docs/decisions.md) · [explainer, frame by frame](https://abhisheksreesaila.github.io/omxpert-mojo/)
+
+---
+
+## Day 8 · Nov 18 (the plan) 🌙 Can the experts learn me, every night, and get cheaper without getting worse?
+
+**Planned, no results yet.** Stop only moving experts around and start changing weights, from my own chats: delete or skip the experts I don't use, repair the damage with small adapters, retrain the router with a reward for picking experts already on the GPU, and test MoLE-style lookups that a CPU can serve. A loop runs every night and keeps a change only if it passes a fixed gate.
+
+🧭 **The plan**
+- **Delete and skip:** drop cold, low-weight picks; REAP-style pruning scored on my chats.
+- **Repair:** rank-32 adapters per block, distilled toward the untouched model.
+- **Reward-trained router:** router only, layer by layer, then GRPO with reward = −KL + λ·(picks on the GPU).
+- **Lookups:** tune only the n-gram table rows my text touches; a token-indexed table standing in for the coldest experts.
+- **Stretch:** weights as a compiler, Mojo kernels specialised per expert.
+
+📏 **The yardstick**
+- **Split by date:** TRAIN = chats before 10 Nov; FROZEN = 10 to 17 Nov plus ~60 checkable tasks, never trained on, never changed; TOMORROW = each new day, scored before it joins TRAIN.
+- **Gate:** KL to the untouched model ≤ 0.05 (noise floor 0.026), top-1 agreement ≥ 90%, pass@1 at most 2 tasks down, and faster than the champion by more than the noise.
+- Only numbers get published. The chats stay on the machine.
+
+📚 **Built on:** [ReMoE](https://arxiv.org/abs/2605.27081) (router-only locality tune), [CAR-MoE](https://neurips.cc/virtual/2026/164462) (cache hits as an RL reward), [melinoe](https://arxiv.org/pdf/2602.11192) (transfer penalty), [a negative result](https://tldr.takara.ai/p/2608.18261) (locality losses failed a ≤1% perplexity gate), [REAP](https://arxiv.org/abs/2510.13999) (pruning), [MoLE](https://arxiv.org/abs/2503.15798) (experts as lookup tables), and Hugging Face's [harness adapters](https://huggingface.co/blog/harness-hub/harness-adapters) (GRPO + rank-32 LoRA + an efficiency bonus; I'd borrow the reward shape: task score plus a bonus for fewer cold experts).
+
+💡 **The open question:** published work warns that fewer misses usually cost quality. Can a model tuned to one person's chats dodge that, or will the gate reject everything? Either answer goes here.
+
+---
+
 ## Where it stands
 
-- **It runs, exactly.** Qwen3.8-Flash-Next (Qwen 4 preview architecture, 111 GB at 4-bit) runs bit-exact on 2× RTX 3090 + 64 GB RAM at ~21–24 tok/s decode in llama.cpp.
-- **The learning works, and it's personal.** A profile from your own chat history: 30% of experts serve 79% of picks in new conversations (someone else's profile: 44%).
-- **Now it's faster (Day 6).** Profile + exclusive tiers + CPU-while-GPU (FreeToken's idea, ported into llama.cpp) + prompt-path fixes: 22.2 / 21.1 vs 17.7 / 15.7 tok/s decode and ~2× prompt speed over stock, on the kind of work the profile learned. Not bit-exact, and slower than stock on unlike text: re-profile when your work changes.
-- **Next:** the expert layer in Mojo (hot experts on the GPUs, cold on the CPU, one launch per layer), and a real coding-task quality test.
-- **Prior art.** Expert offloading, profile-driven placement, learned prefetch and router bias toward cached experts all have prior work, listed in [PRIOR_ART.md](PRIOR_ART.md). Our angle is narrower: a personal, per-task profile plus learned prediction, tested end to end on consumer hardware, and measured honestly, including what failed.
+- **Mojo expert layer, on llama.cpp's own stream:** ~49–54 tok/s decode on short chat for Qwen3.8-Flash-Next (125B MoE + 51B n-gram table, 111 GB at 4-bit) on 2× RTX 3090 + 64 GB RAM, measured back to back against my pinned llama.cpp stack at 31.9. Greedy text byte-identical across paths.
+- **Long context holds up:** a 25K-token prompt at 181–187 tok/s (pinned stack 163), decode afterwards near 38 tok/s (27). Short prompts are level with llama.cpp, not ahead.
+- **The learning is personal:** 30% of experts serve 79% of picks in new conversations from my profile; someone else's profile serves 44%. On text unlike my chats, the stack can be slower than stock.
+- **Next (Day 8 onward):** the nightly loop. Prune, repair, reward-train the router, try lookups, and keep only what passes a frozen test.
+- **Prior art.** Expert offloading, profile-driven placement, learned prefetch, router tuning for locality and expert pruning all have prior work, listed in [PRIOR_ART.md](PRIOR_ART.md). The angle here is narrower: one person's profile and one person's nightly tuning, tested end to end on consumer hardware, including what failed.
 
 ## Credits
 
@@ -191,4 +261,6 @@ Key: ✅ worked · ❌ failed · ↩️ retracted · 💡 the lesson · 📄 lab
 - **[llama.cpp and ggml](https://github.com/ggml-org/llama.cpp):** the engine every run used.
 - **[unsloth](https://huggingface.co/unsloth):** the GGUF quants.
 - **FlashML / FreeToken authors** (and yuuki-net's FreeToken-Kai fork): the hybrid CPU+GPU executor whose idea Day 6 ported into llama.cpp.
+- **Modular:** Mojo and MAX, the language and compiler of the Day 7 expert layer.
+- **The papers Day 8 builds on:** ReMoE, CAR-MoE, melinoe, the locality negative result, REAP, MoLE and Hugging Face's harness adapters.
 - **The prior-art authors** in [PRIOR_ART.md](PRIOR_ART.md): ProMoE, MoE-Infinity, PowerInfer, KTransformers, Cache-Prior, ReMoE, DoMoE and the rest.

@@ -33,6 +33,7 @@ h3 { font: 700 19px/1.25 var(--sans); letter-spacing: -.02em; margin: 0; }
 .card p { color: var(--ink2); font-size: 15px; margin: 8px 0 0; }
 .more { color: var(--acc); font: 500 15.5px var(--sans); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .more::after { content: "›"; margin-left: 5px; }
+.card p a { color: var(--acc); }
 a:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; border-radius: 8px; }
 .cta { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--acc); color: var(--on-acc); font: 600 14px var(--sans); text-decoration: none; }
 /* header */
@@ -87,7 +88,7 @@ footer { color: var(--ink3); font-size: 13.5px; padding: 80px 28px 60px; line-he
 <body>
 <header class="top">
   <a class="brand" href="#top"><span>omxpert dispatch</span> <span class="rtag">Research</span></a>
-  <nav class="pill" aria-label="Sections"><a href="#vision">Vision</a><a href="#setup">Setup</a><a href="#worked">What worked</a><a href="#didnt">What didn't</a><a href="#join">Contribute</a></nav>
+  <nav class="pill" aria-label="Sections"><a href="#vision">Vision</a><a href="#story">Journey</a><a href="#setup">Setup</a><a href="#worked">What worked</a><a href="#didnt">What didn't</a><a href="#join">Contribute</a></nav>
   <a class="cta" href="https://github.com/abhisheksreesaila/omxpert-dispatch">GitHub</a>
 </header>
 
@@ -100,6 +101,23 @@ footer { color: var(--ink3); font-size: 13.5px; padding: 80px 28px 60px; line-he
       <div class="card"><span class="k" style="color:var(--ink3)">The usual way</span><h3>Tune the whole model or agent to you</h3><p>Fine-tune, prompt, add memory. The model still needs all its experts in memory, or it waits on the disk.</p></div>
       <div class="card us"><span class="k">What we're testing</span><h3>Tune which experts you keep close</h3><p>Profile your sessions, put your experts in VRAM and RAM, leave the rest on disk. Then stack tricks others have shared on top, and measure each one.</p></div>
     </div>
+  </section>
+
+  <section id="story">
+    <div class="eyebrow rv">The story so far</div>
+    <h2 class="rv">How did 11 tok/s become ~50, <span class="acc">and what's the next question?</span></h2>
+    <p class="sub rv">Eight days, one question per scene, with the twists kept in. The full storyboard draws where the experts lived each day.</p>
+    <div class="card ladder rv" data-max="60">
+      <h3>Qwen3.8-Flash-Next on 2× RTX 3090, day by day</h3>
+      <div class="meta">decode, tokens per second · each row: what that day reached, and the reference it was measured against that day</div>
+      <div class="step"><span class="n">D5</span><div class="what">Qwen 4's architecture runs at all<small>stock llama.cpp: first run 11.0, warm reruns 21–24</small></div><div class="track"><div class="fill base" data-v="22.5"></div></div><div class="v">21–24<small>vs 11.0</small></div></div>
+      <div class="step"><span class="n">D6</span><div class="what">My chats pick the VRAM experts<small>vs stock llama.cpp, interleaved, my held-out chat prompts</small></div><div class="track"><div class="fill" data-v="22.2"></div></div><div class="v">22.2<small>vs 17.7</small></div></div>
+      <div class="step"><span class="n">D7</span><div class="what">The expert layer in Mojo <span class="from">omxpert-mojo</span><small>vs my pinned llama.cpp stack, back to back</small></div><div class="track"><div class="fill" data-v="41.0"></div></div><div class="v">41.0<small>vs 31.9</small></div></div>
+      <div class="step total"><span class="n">D7</span><div class="what">On llama.cpp's own CUDA stream<small>CUDA graphs on, ~1,700 more hot experts, 92% of picks on the GPUs</small></div><div class="track"><div class="fill best" data-v="53.9"></div></div><div class="v">49–54<small>vs 41.0</small></div></div>
+      <div class="step"><span class="n">D8</span><div class="what">Can the experts learn me, every night?<small>prune, repair, reward-train the router, lookups; a frozen gate decides</small></div><div class="track"><div class="fill base" data-v="0"></div></div><div class="v">?<small>from 19 Nov</small></div></div>
+    </div>
+    <p class="cap rv">References changed between days (prompts, cache state, desktop load), so each row compares against its own reference, not against the row above.</p>
+    <div class="links rv"><a class="more" href="journey.html#story">Watch the storyboard</a><a class="more" href="journey.html#nightly">The nightly frames</a><a class="more" href="https://abhisheksreesaila.github.io/omxpert-mojo/">The Mojo layer, frame by frame</a></div>
   </section>
 
   <section id="setup">
@@ -154,12 +172,12 @@ footer { color: var(--ink3); font-size: 13.5px; padding: 80px 28px 60px; line-he
     <div class="eyebrow rv">It carries on</div>
     <h2 class="rv">An experiment in progress. <span class="acc">Your ideas welcome.</span></h2>
     <div class="join">
-      <div class="card rv"><span class="k">Next</span><h3>The expert layer in Mojo, and a real quality test</h3><p>Hot experts on the GPUs and cold ones on the CPU in one pass per layer, with SIMD on the CPU side. And pass@1 on real coding tasks, stack vs stock.</p></div>
+      <div class="card rv"><span class="k">Next</span><h3>Can the experts learn me, every night?</h3><p>The Mojo expert layer is in (Day 7, ~49–54 tok/s). Next, weights change from my own chats: prune and skip, repair with adapters, a reward-trained router and MoLE-style lookups, kept only if they pass a frozen test. One storyboard frame per night on the <a href="journey.html#nightly">journey page</a>.</p></div>
       <div class="card rv"><span class="k">Contribute</span><h3>Try it, break it, tell us</h3><p>Run it with your own history (<code>omxpert/profile.sh</code>, then <code>STACK=pinned omxpert/run.sh</code>), share your numbers, or suggest a trick.</p>
         <div class="links"><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/issues">Open an issue</a><a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch">Code</a></div></div>
     </div>
     <div class="links rv" style="margin-top:22px">
-      <a class="more" href="journey.html">Day-by-day journey</a>
+      <a class="more" href="journey.html">Day-by-day journey and storyboard</a>
       <a class="more" href="night6_before_after.html">Desktop: every trick, before and after</a>
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/tree/main/docs/logs">Lab notes</a>
       <a class="more" href="https://github.com/abhisheksreesaila/omxpert-dispatch/blob/main/docs/PRIOR_ART.md">Prior art</a>
@@ -179,7 +197,7 @@ footer { color: var(--ink3); font-size: 13.5px; padding: 80px 28px 60px; line-he
   const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; e.target.classList.add("in"); if (e.target.classList.contains("ladder")) fill(e.target); io.unobserve(e.target); }), { threshold: .12 });
   document.querySelectorAll(".rv").forEach(el => reduce ? (el.classList.add("in"), el.classList.contains("ladder") && fill(el)) : io.observe(el));
   const links = [...document.querySelectorAll(".pill a")], secs = links.map(a => document.querySelector(a.getAttribute("href")));
-  addEventListener("scroll", () => { let on = -1; secs.forEach((s, i) => { if (s.getBoundingClientRect().top < 200) on = i; }); links.forEach((a, i) => a.classList.toggle("on", i === on)); }, { passive: true });
+  addEventListener("scroll", () => { let on = -1; secs.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 200) on = i; }); links.forEach((a, i) => a.classList.toggle("on", i === on)); }, { passive: true });
 })();
 </script>
 </body>
