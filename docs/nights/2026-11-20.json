@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-20",
+  "night": 1,
+  "champion_before": "mojo",
+  "champion_after": "mojo",
+  "decode_tps_before": 32.05,
+  "decode_tps_after": 32.05,
+  "tried": [
+    {
+      "name": "m1_base",
+      "verdict": "rejected",
+      "kl": 0.074629,
+      "top1": 0.86626,
+      "pass1": 0.9677,
+      "decode_tps": 32.03,
+      "gpu_hit": 0.8831,
+      "note": "failed: KL 0.074629, top-1 0.86626, speed 32.03 vs 32.0"
+    },
+    {
+      "name": "m1_prune100",
+      "verdict": "rejected",
+      "kl": 0.521884,
+      "top1": 0.68619,
+      "pass1": null,
+      "decode_tps": 67.14,
+      "gpu_hit": 1.0,
+      "note": "failed: KL 0.521884, top-1 0.68619, no task run"
+    },
+    {
+      "name": "m1_prune25r",
+      "verdict": "rejected",
+      "kl": 0.129523,
+      "top1": 0.8354600000000001,
+      "pass1": null,
+      "decode_tps": 41.38,
+      "gpu_hit": 0.8613,
+      "note": "failed: KL 0.129523, top-1 0.8354600000000001, no task run"
+    },
+    {
+      "name": "m1_skip65000",
+      "verdict": "rejected",
+      "kl": 0.162569,
+      "top1": 0.8184600000000001,
+      "pass1": null,
+      "decode_tps": 46.27,
+      "gpu_hit": 0.903,
+      "note": "failed: KL 0.162569, top-1 0.8184600000000001, no task run"
+    },
+    {
+      "name": "m3_A_lam1",
+      "verdict": "rejected",
+      "kl": 0.352338,
+      "top1": 0.74118,
+      "pass1": null,
+      "decode_tps": 46.11,
+      "gpu_hit": 0.9601,
+      "note": "failed: KL 0.352338, top-1 0.74118, no task run"
+    },
+    {
+      "name": "m3_router_identity",
+      "verdict": "rejected",
+      "kl": 0.074629,
+      "top1": 0.86626,
+      "pass1": null,
+      "decode_tps": null,
+      "gpu_hit": null,
+      "note": "failed: KL 0.074629, top-1 0.86626, no task run, speed None vs 32.0"
+    },
+    {
+      "name": "m4_table100",
+      "verdict": "rejected",
+      "kl": 0.501956,
+      "top1": 0.68938,
+      "pass1": null,
+      "decode_tps": 66.08,
+      "gpu_hit": 1.0,
+      "note": "failed: KL 0.501956, top-1 0.68938, no task run"
+    },
+    {
+      "name": "p_stock_b512",
+      "verdict": "rejected",
+      "kl": 0.078855,
+      "top1": 0.86217,
+      "pass1": null,
+      "decode_tps": null,
+      "gpu_hit": null,
+      "note": "failed: KL 0.078855, top-1 0.86217, no task run, speed None vs 32.0"
+    },
+    {
+      "name": "p_xq8",
+      "verdict": "rejected",
+      "kl": 0.068964,
+      "top1": 0.8712399999999999,
+      "pass1": null,
+      "decode_tps": null,
+      "gpu_hit": null,
+      "note": "failed: KL 0.068964, top-1 0.8712399999999999, no task run, speed None vs 32.0"
+    },
+    {
+      "name": "p_xq8h",
+      "verdict": "rejected",
+      "kl": 0.07662,
+      "top1": 0.86283,
+      "pass1": null,
+      "decode_tps": null,
+      "gpu_hit": null,
+      "note": "failed: KL 0.07662, top-1 0.86283, no task run, speed None vs 32.0"
+    }
+  ],
+  "sources": [],
+  "picture": "Night 1, partial: the box lost power at 02:00; 7 arms measured, none passes the gate (champion KL 0.075 vs gate 0.05)"
+}
